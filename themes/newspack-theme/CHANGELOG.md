@@ -1,10 +1,15 @@
-# [2.3.0-alpha.1](https://github.com/Automattic/newspack-theme/compare/v2.2.0...v2.3.0-alpha.1) (2024-11-15)
+## [2.2.1](https://github.com/Automattic/newspack-theme/compare/v2.2.0...v2.2.1) (2024-11-19)
 
+### Bug Fixes
+
+* getting translations to load again ([#2411](https://github.com/Automattic/newspack-theme/issues/2411)) ([110b039](https://github.com/Automattic/newspack-theme/commit/110b039b5c7d90b13c98753f8c8146071169b2bd))
+
+
+# [2.3.0-alpha.1](https://github.com/Automattic/newspack-theme/compare/v2.2.0...v2.3.0-alpha.1) (2024-11-15)
 
 ### Bug Fixes
 
 * make button background styles more specific ([#2407](https://github.com/Automattic/newspack-theme/issues/2407)) ([21f6a4e](https://github.com/Automattic/newspack-theme/commit/21f6a4ed62affb29854b8a8ad17dbfd42ba66cff))
-
 
 ### Features
 
