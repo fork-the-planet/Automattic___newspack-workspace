@@ -1,3 +1,10 @@
+## [2.4.1](https://github.com/Automattic/newspack-theme/compare/v2.4.0...v2.4.1) (2024-12-16)
+
+
+### Bug Fixes
+
+* workaround for block editor crash ([53cd463](https://github.com/Automattic/newspack-theme/commit/53cd4638d9ce269c3158b3aa1b02c3157403568c))
+
 # [2.4.0](https://github.com/Automattic/newspack-theme/compare/v2.3.0...v2.4.0) (2024-12-09)
 
 
