@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/Automattic/newspack-sponsors/compare/v2.0.0...v2.0.1) (2025-01-20)
+
+
+### Bug Fixes
+
+* Merge pull request [#333](https://github.com/Automattic/newspack-sponsors/issues/333) from Automattic/trunk ([14d00dc](https://github.com/Automattic/newspack-sponsors/commit/14d00dcb44a42a7ff0b0b7af0e5cdd8a3e022a56))
+
 # [2.0.0](https://github.com/Automattic/newspack-sponsors/compare/v1.13.1...v2.0.0) (2024-08-13)
 
 
