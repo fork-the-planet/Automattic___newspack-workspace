@@ -1,7 +1,7 @@
 {
-	"name": "newspack",
+	"name": "newspack-story-budget",
 	"version": "6.0.3",
-	"description": "The Newspack plugin. https://newspack.com",
+	"description": "Story budgeting by Newspack. https://newspack.com",
 	"bugs": {
 		"url": "https://github.com/Automattic/newspack-story-budget/issues"
 	},
