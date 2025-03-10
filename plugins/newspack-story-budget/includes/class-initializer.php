@@ -1,11 +1,11 @@
 <?php
 /**
- * Newspack Hub plugin initialization.
+ * Newspack Story Budget plugin initialization.
  *
  * @package Newspack
  */
 
-namespace Newspack_Network;
+namespace Newspack_Story_Budget;
 
 /**
  * Class to handle the plugin initialization
