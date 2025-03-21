@@ -9,6 +9,7 @@ namespace Newspack_Story_Budget;
 
 use Newspack_Story_Budget\Fields\Editable_Field;
 use Newspack_Story_Budget\Fields\Read_Only_Field;
+use Newspack_Story_Budget\Fields\Statuses;
 
 /**
  * Story budget fields.
@@ -25,14 +26,7 @@ class Fields {
 	 * Initializes default fields.
 	 */
 	public static function init() {
-		self::register_fields();
-		self::initialize_hooks();
-	}
-
-	/**
-	 * Initialize hooks.
-	 */
-	public static function initialize_hooks() {
+		\add_action( 'init', [ __CLASS__, 'register_fields' ] );
 		\add_action( 'save_post', [ __CLASS__, 'on_post_update' ] );
 	}
 
@@ -94,38 +88,7 @@ class Fields {
 				'name'          => __( 'Status', 'newspack-story-budget' ),
 				'slug'          => 'status',
 				'type'          => 'text',
-
-				/**
-				 * Filters the story budget statuses.
-				 *
-				 * @param array $statuses Keyed array of available statuses for story budget lines.
-				 */
-				'options'       => apply_filters(
-					'newspack_story_budget_statuses',
-					[
-						[
-							'label'    => __( 'Writing', 'newspack-story-budget' ),
-							'value'    => 'writing',
-							'selected' => true,
-						],
-						[
-							'label' => __( 'Editing', 'newspack-story-budget' ),
-							'value' => 'editing',
-						],
-						[
-							'label' > __( 'Fact-checking', 'newspack-story-budget' ),
-							'value' => 'factcheck',
-						],
-						[
-							'label' => __( 'Approved', 'newspack-story-budget' ),
-							'value' => 'approved',
-						],
-						[
-							'label' > __( 'Published', 'newspack-story-budget' ),
-							'value' => 'published',
-						],
-					]
-				),
+				'options'       => Statuses::get_statuses_arrays(),
 			],
 
 			// Read-only fields.
