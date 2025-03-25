@@ -139,59 +139,52 @@ class Fields {
 				'show_in_table'       => true,
 				'slug'                => 'budgets',
 				'type'                => 'number',
-
-				/**
-				 * Filters the story budget statuses.
-				 *
-				 * @param array $statuses Keyed array of available statuses for story budget lines.
-				 */
-				'options'             => apply_filters(
-					'newspack_story_budget_options',
-					array_map(
-						function( $budget ) {
-							$budget = $budget->to_array();
-							return [
-								'label' => $budget['name'],
-								'value' => $budget['id'],
-							];
-						},
-						Budgets::get_budgets()
-					)
+				'options'             => array_map(
+					function( $budget ) {
+						$budget = $budget->to_array();
+						return [
+							'label' => $budget['name'],
+							'value' => $budget['id'],
+						];
+					},
+					Budgets::get_budgets()
 				),
 			],
 			[
-				'default_value' => function() {
+				'default_value'       => function() {
 					return 'writing';
 				},
-				'description'   => __( 'The current editorial status of the story.', 'newspack-story-budget' ),
-				'is_editable'   => true,
-				'is_filterable' => true,
-				'is_sortable'   => false,
-				'name'          => __( 'Status', 'newspack-story-budget' ),
-				'show_in_table' => true,
-				'slug'          => 'status',
-				'type'          => 'text',
-				'options'       => Statuses::get_statuses_arrays(),
+				'description'         => __( 'The current editorial status of the story.', 'newspack-story-budget' ),
+				'is_editable'         => true,
+				'is_filterable'       => true,
+				'is_sortable'         => false,
+				'name'                => __( 'Status', 'newspack-story-budget' ),
+				'show_in_table'       => true,
+				'slug'                => 'status',
+				'type'                => 'text',
+				'options'             => Statuses::get_statuses_arrays(),
+				'save_value_callback' => [ __CLASS__, 'save_status' ],
+				'get_value_callback'  => [ __CLASS__, 'get_status' ],
 			],
 			[
-				'description'         => __( 'The word count of the story.', 'newspack-story-budget' ),
-				'is_editable'         => false,
-				'is_sortable'         => true,
-				'name'                => __( 'Length', 'newspack-story-budget' ),
-				'save_value_callback' => [ __CLASS__, 'get_word_count' ],
-				'show_in_table'       => true,
-				'slug'                => 'word_count',
-				'type'                => 'number',
+				'description'        => __( 'The word count of the story.', 'newspack-story-budget' ),
+				'is_editable'        => false,
+				'is_sortable'        => true,
+				'name'               => __( 'Length', 'newspack-story-budget' ),
+				'post_save_callback' => [ __CLASS__, 'get_word_count' ],
+				'show_in_table'      => true,
+				'slug'               => 'word_count',
+				'type'               => 'number',
 			],
 			[
-				'description'         => __( 'Number of images in story content, not including the featured image.', 'newspack-story-budget' ),
-				'is_editable'         => false,
-				'is_sortable'         => true,
-				'name'                => __( 'Image count', 'newspack-story-budget' ),
-				'save_value_callback' => [ __CLASS__, 'get_image_count' ],
-				'show_in_table'       => true,
-				'slug'                => 'image_count',
-				'type'                => 'number',
+				'description'        => __( 'Number of images in story content, not including the featured image.', 'newspack-story-budget' ),
+				'is_editable'        => false,
+				'is_sortable'        => true,
+				'name'               => __( 'Image count', 'newspack-story-budget' ),
+				'post_save_callback' => [ __CLASS__, 'get_image_count' ],
+				'show_in_table'      => true,
+				'slug'               => 'image_count',
+				'type'               => 'number',
 			],
 			[
 				'description'        => __( 'Time of last modification.', 'newspack-story-budget' ),
@@ -214,13 +207,13 @@ class Fields {
 				'type'               => 'date',
 			],
 			[
-				'description'         => __( 'The user who published the story online.', 'newspack-story-budget' ),
-				'is_editable'         => false,
-				'is_sortable'         => true,
-				'name'                => __( 'Published by', 'newspack-story-budget' ),
-				'save_value_callback' => [ __CLASS__, 'get_published_user' ],
-				'slug'                => 'published_by',
-				'type'                => 'text',
+				'description'        => __( 'The user who published the story online.', 'newspack-story-budget' ),
+				'is_editable'        => false,
+				'is_sortable'        => true,
+				'name'               => __( 'Published by', 'newspack-story-budget' ),
+				'post_save_callback' => [ __CLASS__, 'get_published_user' ],
+				'slug'               => 'published_by',
+				'type'               => 'text',
 			],
 			[
 				'description'        => __( 'Authors assigned to the post.', 'newspack-story-budget' ),
@@ -364,10 +357,10 @@ class Fields {
 		}
 		$fields = self::get_all_fields();
 		foreach ( $fields as $field ) {
-			if ( $field->is_editable() || ! $field->get_save_value_callback() ) {
+			if ( $field->is_editable() || ! $field->get_post_save_callback() ) {
 				continue;
 			}
-			$value = call_user_func( $field->get_save_value_callback(), $post_id );
+			$value = call_user_func( $field->get_post_save_callback(), $post_id );
 			if ( ! empty( $value ) ) {
 				\update_post_meta( $post_id, $field->get_post_meta_name(), $value );
 			} else {
@@ -440,6 +433,38 @@ class Fields {
 		return $story->update_budgets( $budget_ids );
 	}
 
+	/**
+	 * Get the status of the post.
+	 *
+	 * @param int $post_id The post ID.
+	 *
+	 * @return string The status of the post.
+	 */
+	public static function get_post_status( $post_id ) {
+		$post = \get_post( $post_id );
+		if ( ! $post || ! in_array( $post->post_type, Budgets::get_post_types(), true ) ) {
+			return '';
+		}
+		$status = Statuses::get_post_status( $post_id );
+		if ( ! $status ) {
+			return '';
+		}
+		return $status->get_slug();
+	}
+
+	/**
+	 * Save the status of the post.
+	 *
+	 * @param int    $post_id The post ID.
+	 * @param string $status_slug The status slug to assign to the post.
+	 */
+	public static function save_post_status( $post_id, $status_slug ) {
+		$post = \get_post( $post_id );
+		if ( ! $post || ! in_array( $post->post_type, Budgets::get_post_types(), true ) ) {
+			return;
+		}
+		return Statuses::set_post_status( $post_id, $status_slug );
+	}
 	/**
 	 * Add custom columns to the post list table.
 	 *

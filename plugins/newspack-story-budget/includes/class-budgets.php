@@ -28,7 +28,7 @@ class Budgets {
 	 * Initialize hooks.
 	 */
 	public static function init() {
-		add_action( 'init', [ __CLASS__, 'register_taxonomy' ] );
+		add_action( 'init', [ __CLASS__, 'register_taxonomy' ], 5 ); // Before the fields are initialized.
 	}
 
 	/**

@@ -110,20 +110,20 @@ abstract class Abstract_Field {
 	protected $get_value_callback = null;
 
 	/**
-	 * Optional callback used to calculate the value of the field on post_save.
-	 * If provided, the value will be calculated stored as post meta on post update.
+	 * Optional callback used to save the value of the field to a post.
+	 * Defaults to saving the value as post meta.
 	 *
 	 * @var callable|null
 	 */
 	protected $save_value_callback = null;
 
 	/**
-	 * Optional hook name to trigger the $save_value_callback. Defaults to save_post_post.
-	 * TODO: This isn't currently implemented. Needs more discussion about how to handle.
+	 * Optional callback used to calculate the value of the field on post_save.
+	 * If provided, the value will be calculated stored as post meta on post update.
 	 *
-	 * @var string
+	 * @var callable|null
 	 */
-	protected $save_value_hook = 'save_post';
+	protected $post_save_callback = null;
 
 	/**
 	 * Errors that occurred during field initialization.
@@ -188,7 +188,25 @@ abstract class Abstract_Field {
 		}
 
 		if ( ! empty( $args['save_value_callback'] ) && is_callable( $args['save_value_callback'] ) ) {
-			$this->save_value_callback = $args['save_value_callback'];
+			if ( ! $this->is_editable ) {
+				$this->errors->add(
+					'newspack_story_budget_field_save_value_callback_not_editable',
+					__( 'The field is not editable, so the save_value_callback cannot be set.', 'newspack-story-budget' )
+				);
+			} else {
+				$this->save_value_callback = $args['save_value_callback'];
+			}
+		}
+
+		if ( ! empty( $args['post_save_callback'] ) && is_callable( $args['post_save_callback'] ) ) {
+			if ( $this->is_editable ) {
+				$this->errors->add(
+					'newspack_story_budget_field_post_save_callback_not_editable',
+					__( 'post_save_callback is only allowed for read only fields.', 'newspack-story-budget' )
+				);
+			} else {
+				$this->post_save_callback = $args['post_save_callback'];
+			}
 		}
 	}
 

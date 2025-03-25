@@ -8,6 +8,7 @@
 namespace Newspack_Story_Budget\Fields;
 
 use WP_Error;
+use WP_Term;
 
 /**
  * Class representing a single status.
@@ -28,11 +29,11 @@ class Status {
 	private $label;
 
 	/**
-	 * The permission callback.
+	 * The required capability to use this status.
 	 *
-	 * @var callable|null
+	 * @var string|null
 	 */
-	private $permission_callback;
+	private $required_capability;
 
 	/**
 	 * Any errors that occurred during creation.
@@ -51,38 +52,56 @@ class Status {
 	/**
 	 * Constructor.
 	 *
-	 * @param array $args {
-	 *     Arguments for creating a new status.
-	 *
-	 *     @type string        $slug               Required. The status slug.
-	 *     @type string        $label              Required. The status label.
-	 *     @type callable|null $permission_callback Optional. Callback to determine if user can use this status.
-	 * }
+	 * @param WP_Term|string $term_or_slug WP_Term object or status slug.
 	 */
-	public function __construct( $args ) {
+	public function __construct( $term_or_slug ) {
 		$this->errors = new WP_Error();
 
-		if ( empty( $args['slug'] ) ) {
+		if ( $term_or_slug instanceof WP_Term ) {
+			$this->init_from_term( $term_or_slug );
+		} else {
+			$this->initialize_by_slug( $term_or_slug );
+		}
+	}
+
+	/**
+	 * Initialize from a WP_Term object.
+	 *
+	 * @param WP_Term $term The term object.
+	 */
+	private function init_from_term( $term ) {
+		$this->slug = $term->slug;
+		$this->label = $term->name;
+		$this->required_capability = get_term_meta( $term->term_id, Statuses::CAPABILITY_META_KEY, true );
+	}
+
+	/**
+	 * Initialize by slug.
+	 *
+	 * @param string $slug The status slug.
+	 */
+	private function initialize_by_slug( $slug ) {
+		if ( empty( $slug ) ) {
 			$this->errors->add(
 				'missing_slug',
 				__( 'Status slug is required.', 'newspack-story-budget' )
 			);
-		}
-
-		if ( empty( $args['label'] ) ) {
-			$this->errors->add(
-				'missing_label',
-				__( 'Status label is required.', 'newspack-story-budget' )
-			);
-		}
-
-		if ( $this->has_errors() ) {
 			return;
 		}
 
-		$this->slug = $args['slug'];
-		$this->label = $args['label'];
-		$this->permission_callback = ! empty( $args['permission_callback'] ) ? $args['permission_callback'] : null;
+		$this->slug = $slug;
+
+		$term = get_term_by( 'slug', $slug, Statuses::TAXONOMY );
+		if ( $term ) {
+			$this->label = $term->name;
+			$this->required_capability = get_term_meta( $term->term_id, Statuses::CAPABILITY_META_KEY, true );
+		} else {
+			// If term doesn't exist, set an error.
+			$this->errors->add(
+				'invalid_slug',
+				__( 'Invalid status slug.', 'newspack-story-budget' )
+			);
+		}
 	}
 
 	/**
@@ -104,6 +123,15 @@ class Status {
 	}
 
 	/**
+	 * Get the required capability.
+	 *
+	 * @return string|null
+	 */
+	public function get_required_capability() {
+		return $this->required_capability;
+	}
+
+	/**
 	 * Whether the current user can use this status.
 	 *
 	 * @return bool Whether the current user can use this status.
@@ -119,16 +147,16 @@ class Status {
 	 * @return bool Whether the user can use this status.
 	 */
 	public function user_can( $user_id ) {
-		if ( ! $this->permission_callback ) {
+		if ( empty( $this->required_capability ) ) {
 			return true;
 		}
 
-		// memoize the result.
+		// Memoize the result.
 		if ( isset( $this->user_can_cache[ $user_id ] ) ) {
 			return $this->user_can_cache[ $user_id ];
 		}
 
-		$this->user_can_cache[ $user_id ] = call_user_func( $this->permission_callback, $user_id );
+		$this->user_can_cache[ $user_id ] = user_can( $user_id, $this->required_capability );
 
 		return $this->user_can_cache[ $user_id ];
 	}
@@ -158,9 +186,10 @@ class Status {
 	 */
 	public function to_array() {
 		return [
-			'slug'                 => $this->get_slug(),
-			'label'                => $this->get_label(),
-			'current_user_can_use' => $this->current_user_can(),
+			'value'               => $this->get_slug(),
+			'label'               => $this->get_label(),
+			'required_capability' => $this->get_required_capability(),
+			'user_can_apply'      => $this->current_user_can(),
 		];
 	}
 }

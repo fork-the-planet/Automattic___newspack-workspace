@@ -31,7 +31,7 @@ class Read_Only_Field extends Abstract_Field {
 			$this->save_value_hook = $args['save_value_hook'];
 		}
 
-		if ( is_null( $this->get_value_callback ) && is_null( $this->save_value_callback ) ) {
+		if ( is_null( $this->get_value_callback ) && is_null( $this->post_save_callback ) ) {
 			$this->errors->add(
 				'newspack_story_budget_invalid_field_configuration',
 				__( 'Read-only fields must receive a callback function to calculate their value.', 'newspack-story-budget' )
@@ -49,12 +49,12 @@ class Read_Only_Field extends Abstract_Field {
 	}
 
 	/**
-	 * Get the field's save_value_callback.
+	 * Get the field's post_save_callback.
 	 *
 	 * @return callable? The field's callback.
 	 */
-	public function get_save_value_callback() {
-		return $this->save_value_callback;
+	public function get_post_save_callback() {
+		return $this->post_save_callback;
 	}
 
 	/**
@@ -86,7 +86,7 @@ class Read_Only_Field extends Abstract_Field {
 		}
 
 		// Get the stored value.
-		if ( $this->save_value_callback && is_callable( $this->save_value_callback ) ) {
+		if ( $this->post_save_callback && is_callable( $this->post_save_callback ) ) {
 			return \get_post_meta( $post_id, $this->get_post_meta_name(), true );
 		}
 
