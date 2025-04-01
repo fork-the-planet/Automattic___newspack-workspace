@@ -251,7 +251,6 @@ class Fields {
 			[
 				'description'   => __( 'Print rank of the story.', 'newspack-story-budget' ),
 				'is_editable'   => true,
-				'is_filterable' => true,
 				'is_searchable' => true,
 				'is_sortable'   => true,
 				'name'          => __( 'Print rank', 'newspack-story-budget' ),
@@ -262,7 +261,7 @@ class Fields {
 			[
 				'description'   => __( 'Print page of the story.', 'newspack-story-budget' ),
 				'is_editable'   => true,
-				'is_filterable' => true,
+				'is_searchable' => true,
 				'is_sortable'   => true,
 				'name'          => __( 'Print page', 'newspack-story-budget' ),
 				'show_in_table' => true,
