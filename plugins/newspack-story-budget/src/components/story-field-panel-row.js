@@ -45,7 +45,7 @@ export default ( { field, story, anchor = 'field', onChange } ) => {
 			<StoryField
 				fieldId={ field.slug }
 				storyId={ story.id }
-				value={ story[ field.slug ] }
+				value={ story[ field.slug ] || '' }
 				onChange={ onChange }
 				popoverProps={ popoverProps }
 			/>

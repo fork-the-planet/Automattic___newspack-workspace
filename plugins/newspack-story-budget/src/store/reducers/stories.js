@@ -4,7 +4,12 @@ export default ( state = INITIAL_STATE.stories, action ) => {
 	switch ( action.type ) {
 		case 'STORIES_SET':
 			const stories = action.payload.reduce( ( acc, story ) => {
-				acc[ story.id ] = story;
+				acc[ story.id ] = {
+					...story,
+					metadata: {
+						...state[ story.id ]?.metadata,
+					},
+				};
 				return acc;
 			}, {} );
 			return stories;

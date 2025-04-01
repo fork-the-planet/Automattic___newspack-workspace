@@ -2,6 +2,7 @@ export const getDisplayValue = ( field, value ) => {
 	if (
 		value === null ||
 		value === undefined ||
+		value === '' ||
 		( Array.isArray( value ) && ! value.length ) ||
 		( [ 'date', 'datetime', 'text', 'longtext' ].includes( field.type ) &&
 			! value )

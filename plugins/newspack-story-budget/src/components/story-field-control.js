@@ -67,29 +67,42 @@ export default ( { field, value, onChange = () => {} } ) => {
 		const options = field.options.map( option => ( {
 			...option,
 			label: option.label || option.name,
-			disabled: ! option.user_can_apply || option.disabled,
+			disabled:
+				( option.hasOwnProperty( 'user_can_apply' ) &&
+					! option.user_can_apply ) ||
+				option.disabled,
 		} ) );
 
 		if ( field.is_multiple ) {
 			return (
 				<VStack spacing={ 2 }>
 					{ options.map( option => (
-						<CheckboxControl
-							key={ option.value }
-							label={ option.label }
-							disabled={ option.disabled }
-							checked={ value.includes( option.value ) }
-							value={ value }
-							onChange={ checked => {
-								onChange(
-									checked
-										? [ ...value, option.value ]
-										: value.filter(
-												v => v !== option.value
-										  )
-								);
-							} }
-						/>
+						<div
+							key={ getOptionId( option ) }
+							className="newspack-story-budget__control__checkbox-option"
+						>
+							<input
+								id={ getOptionId( option ) }
+								type="checkbox"
+								checked={ value?.includes( option.value ) }
+								disabled={ option.disabled }
+								onChange={ ev => {
+									onChange(
+										ev.target.checked
+											? [
+													...( value || [] ),
+													option.value,
+											  ]
+											: value?.filter(
+													v => v !== option.value
+											  ) || []
+									);
+								} }
+							/>
+							<label htmlFor={ getOptionId( option ) }>
+								{ option.label }
+							</label>
+						</div>
 					) ) }
 				</VStack>
 			);
@@ -144,7 +157,7 @@ export default ( { field, value, onChange = () => {} } ) => {
 	if ( field.type === 'boolean' ) {
 		return (
 			<CheckboxControl
-				checked={ value }
+				checked={ !! value }
 				label={ field.description || field.name }
 				onChange={ onChange }
 			/>

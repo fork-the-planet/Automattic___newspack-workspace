@@ -153,15 +153,19 @@ body.toplevel_page_newspack-story-budget {
 		margin: 0;
 	}
 	&__control {
+		&__checkbox-option,
 		&__radio-option {
 			display: flex;
-			align-items: center;
+			align-items: flex-start;
+			justify-content: flex-start;
 			gap: 8px;
 			input {
 				margin: 0;
+				flex-shrink: 0;
 			}
 			label {
 				margin: 0;
+				flex-grow: 1;
 			}
 		}
 	}

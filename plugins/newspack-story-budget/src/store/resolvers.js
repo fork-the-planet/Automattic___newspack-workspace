@@ -61,7 +61,7 @@ export const getStory =
 
 export const getStoryMeta =
 	( id, key ) =>
-	async ( { dispatch, select, registry } ) => {
+	async ( { dispatch, resolveSelect, select, registry } ) => {
 		// Bail if the metadata is already fetched.
 		if ( select.getStoryMeta( id, key ) ) {
 			return;
@@ -73,7 +73,7 @@ export const getStoryMeta =
 		}
 		// Fetch story and bail if it's not fetched.
 		if ( ! select.getStory( id ) ) {
-			await dispatch.fetchStory( id );
+			await resolveSelect.getStory( id );
 			return;
 		}
 		// Fetch the story meta.

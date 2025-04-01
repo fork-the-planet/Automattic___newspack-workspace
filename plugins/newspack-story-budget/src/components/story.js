@@ -24,13 +24,14 @@ import { NAMESPACE as storeNamespace } from '../store/constants';
 import StoryFieldPanel from './story-field-panel';
 
 export default ( { storyId, onCancel } ) => {
-	const { fields, story, isLoadingStory, canEditStory, storyError } = useSelect( select => ( {
-		fields: select( storeNamespace ).getFields(),
-		story: select( storeNamespace ).getStory( storyId ),
-		isLoadingStory: select( storeNamespace ).isLoadingStory( storyId ),
-		canEditStory: select( storeNamespace ).canEditStory( storyId ),
-		storyError: select( storeNamespace ).getStoryError( storyId ),
-	} ) );
+	const { fields, story, isLoadingStory, canEditStory, storyError } =
+		useSelect( select => ( {
+			fields: select( storeNamespace ).getFields(),
+			story: select( storeNamespace ).getStory( storyId ),
+			isLoadingStory: select( storeNamespace ).isLoadingStory( storyId ),
+			canEditStory: select( storeNamespace ).canEditStory( storyId ),
+			storyError: select( storeNamespace ).getStoryError( storyId ),
+		} ) );
 	const { saveStory, clearErrors } = useDispatch( storeNamespace );
 	const [ editedStory, setEditedStory ] = useState( story );
 	const [ isIframeLoading, setIsIframeLoading ] = useState( true );
@@ -67,7 +68,7 @@ export default ( { storyId, onCancel } ) => {
 		onCancel?.();
 	};
 
-	const handleFieldChange = ( newStory ) => {
+	const handleFieldChange = newStory => {
 		clearErrors( storyId );
 		setEditedStory( newStory );
 	};
@@ -96,7 +97,7 @@ export default ( { storyId, onCancel } ) => {
 						<Spinner />
 					</VStack>
 				) }
-				{ story.metadata.preview_url && (
+				{ story?.metadata?.preview_url && (
 					<iframe
 						title={ story.title }
 						src={ story.metadata.preview_url }
