@@ -40,7 +40,7 @@ export const getStoriesMeta =
 
 export const getStory =
 	id =>
-	async ( { resolveSelect, dispatch, select, registry } ) => {
+	async ( { resolveSelect, dispatch, select } ) => {
 		// Fetch the entire story if it's not already fetched.
 		if ( ! select.getStory( id ) ) {
 			await dispatch.fetchStory( id );
@@ -50,25 +50,15 @@ export const getStory =
 		if ( select.getStoryMeta( id ) ) {
 			return;
 		}
-		// Bail if the story meta is being fetched.
-		const { hasStartedResolution } = registry.select( NAMESPACE );
-		if ( hasStartedResolution( 'getStoryMeta', id ) ) {
-			return;
-		}
 		// Fetch the story meta.
 		await resolveSelect.getStoryMeta( id );
 	};
 
 export const getStoryMeta =
 	( id, key ) =>
-	async ( { dispatch, resolveSelect, select, registry } ) => {
+	async ( { dispatch, resolveSelect, select } ) => {
 		// Bail if the metadata is already fetched.
-		if ( select.getStoryMeta( id, key ) ) {
-			return;
-		}
-		// Bail if the story is being fetched.
-		const { hasStartedResolution } = registry.select( NAMESPACE );
-		if ( hasStartedResolution( 'getStory', id ) ) {
+		if ( Object.keys( select.getStoryMeta( id, key ) ).length > 0 ) {
 			return;
 		}
 		// Fetch story and bail if it's not fetched.
@@ -82,7 +72,7 @@ export const getStoryMeta =
 
 export const canEditStory =
 	id =>
-	async ( { resolveSelect, select, registry } ) => {
+	async ( { resolveSelect, select } ) => {
 		// If the user can edit stories, they can edit any story.
 		if ( select.getStoriesMeta()?.can_edit ) {
 			return;
@@ -91,14 +81,6 @@ export const canEditStory =
 		if ( select.getStoryMeta( id, 'can_edit' ) !== undefined ) {
 			return;
 		}
-		// Bail if the story or story meta is being fetched.
-		const { hasStartedResolution } = registry.select( NAMESPACE );
-		if (
-			hasStartedResolution( 'getStory', id ) ||
-			hasStartedResolution( 'getStoryMeta', id )
-		) {
-			return;
-		}
 		// Fetch the story meta.
-		await resolveSelect.getStoryMeta( id, 'can_edit' );
+		await resolveSelect.getStoryMeta( id );
 	};
