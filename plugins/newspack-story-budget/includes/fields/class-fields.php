@@ -326,7 +326,7 @@ class Fields {
 						'value' => 'atholdailynews.com',
 					],
 					[
-						'label' => 'Monadnock Ledget Transcript',
+						'label' => 'Monadnock Ledger Transcript',
 						'value' => 'ledgertranscript.com',
 					],
 					[
@@ -379,7 +379,7 @@ class Fields {
 						'value' => 'atholdailynews.com',
 					],
 					[
-						'label' => 'Monadnock Ledget Transcript',
+						'label' => 'Monadnock Ledger Transcript',
 						'value' => 'ledgertranscript.com',
 					],
 					[
