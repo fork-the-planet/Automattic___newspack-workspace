@@ -76,6 +76,7 @@ class Test_API extends \WP_UnitTestCase {
 	public function test_get_stories_with_ids() {
 		// Get a subset of story IDs to test with.
 		$story_ids = array_slice( self::$stories, 0, 3 );
+		sort( $story_ids );
 
 		$request = new \WP_REST_Request( 'GET', sprintf( '%s/stories', API::NAMESPACE ) );
 		$request->set_param( 'ids', $story_ids );
