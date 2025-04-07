@@ -1,25 +1,36 @@
 import { INITIAL_STATE } from '../constants';
 
+export const actions = {
+	STORIES_SET: 'STORIES_SET',
+	SAVE_STORY_SUCCESS: 'SAVE_STORY_SUCCESS',
+	STORIES_APPEND: 'STORIES_APPEND',
+	STORIES_ADD: 'STORIES_ADD',
+	SAVE_STORY_FIELD_SUCCESS: 'SAVE_STORY_FIELD_SUCCESS',
+	STORY_META_SET: 'STORY_META_SET',
+	STORY_META_BATCH_SET: 'STORY_META_BATCH_SET',
+};
+
 export default ( state = INITIAL_STATE.stories, action ) => {
 	switch ( action.type ) {
-		case 'STORIES_SET':
-			const stories = action.payload.reduce( ( acc, story ) => {
-				acc[ story.id ] = {
-					...story,
-					metadata: {
-						...state[ story.id ]?.metadata,
-					},
-				};
-				return acc;
-			}, {} );
-			return stories;
-		case 'SAVE_STORY_SUCCESS':
-		case 'STORIES_ADD':
+		case actions.STORIES_SET:
+			return {
+				...state,
+				...action.payload,
+			};
+		case actions.SAVE_STORY_SUCCESS:
+		case actions.STORIES_APPEND: {
+			const newState = { ...state };
+			for ( const [ id, story ] of Object.entries( action.payload ) ) {
+				newState[ id ] = story;
+			}
+			return newState;
+		}
+		case actions.STORIES_ADD:
 			return {
 				...state,
 				[ action.payload.id ]: action.payload,
 			};
-		case 'SAVE_STORY_FIELD_SUCCESS':
+		case actions.SAVE_STORY_FIELD_SUCCESS:
 			return {
 				...state,
 				[ action.payload.id ]: {
@@ -27,7 +38,7 @@ export default ( state = INITIAL_STATE.stories, action ) => {
 					[ action.payload.slug ]: action.payload.value,
 				},
 			};
-		case 'STORY_META_SET':
+		case actions.STORY_META_SET:
 			return {
 				...state,
 				[ action.payload.id ]: {
@@ -38,7 +49,7 @@ export default ( state = INITIAL_STATE.stories, action ) => {
 					},
 				},
 			};
-		case 'STORY_META_BATCH_SET':
+		case actions.STORY_META_BATCH_SET: {
 			const newState = { ...state };
 			for ( const [ id, result ] of Object.entries( action.payload ) ) {
 				newState[ id ] = {
@@ -50,6 +61,7 @@ export default ( state = INITIAL_STATE.stories, action ) => {
 				};
 			}
 			return newState;
+		}
 		default:
 			return state;
 	}

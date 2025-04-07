@@ -2,18 +2,24 @@
 import { __ } from '@wordpress/i18n';
 import { apiFetch } from '@wordpress/data-controls';
 import { resolveSelect, select, dispatch } from '@wordpress/data';
-import { NAMESPACE, STORAGE_KEYS } from './constants';
+import { addQueryArgs } from '@wordpress/url';
+
+/**
+ * Internal dependencies
+ */
+import { STORAGE_KEYS, getCache } from './cache';
+import { NAMESPACE } from './constants';
 
 const { apiNamespace } = newspackStoryBudget;
 
 export function* initializeEntitiesConfig() {
-	// Hydrate state from sessionStorage if available
+	// Hydrate state from cache if available.
 	for ( const key in STORAGE_KEYS ) {
-		const stored = sessionStorage.getItem( STORAGE_KEYS[ key ] );
-		if ( stored ) {
+		const stored = getCache( key );
+		if ( stored?.data ) {
 			yield {
 				type: 'HYDRATE',
-				payload: { [ key ]: JSON.parse( stored ) },
+				payload: { [ key ]: stored.data },
 			};
 		}
 	}
@@ -31,6 +37,14 @@ export function* initializeEntitiesConfig() {
 			dispatch( NAMESPACE ).fetchStoryMetaBatch( storyIds );
 		}
 	}, 300 );
+
+	// Periodically refresh cacheable state.
+	for ( const key in STORAGE_KEYS ) {
+		const cache = STORAGE_KEYS[ key ];
+		if ( cache?.actions?.length && cache?.ttl ) {
+			setInterval( () => cache.actions.forEach( action => dispatch( NAMESPACE )[ action ]() ), cache.ttl );
+		}
+	}
 }
 
 export function setSearching() {
@@ -121,7 +135,16 @@ export function* fetchBudgets() {
 	}
 }
 
+/**
+ * Fetch all stories from the API.
+ *
+ * @return {Object} Action object.
+ */
 export function* fetchStories() {
+	yield {
+		type: 'FETCH_PROGRESS',
+		payload: { progress: 0 }, // Start progress bar.
+	};
 	yield { type: 'FETCH_START' };
 	try {
 		const result = yield apiFetch( { path: `${ apiNamespace }/stories` } );
@@ -132,23 +155,77 @@ export function* fetchStories() {
 		};
 		while ( stories.length < total ) {
 			const next = yield apiFetch( {
-				path: `${ apiNamespace }/stories?offset=${ stories.length }`,
+				path: addQueryArgs(
+					`${ apiNamespace }/stories`, {
+						offset: stories.length
+					}
+				),
 			} );
 			stories.push( ...next.stories );
 			yield {
 				type: 'FETCH_PROGRESS',
 				payload: { result: next, progress: stories.length / total },
-			};
+			}
 		}
 		return {
 			type: 'STORIES_SET',
-			payload: stories,
+			payload: stories.reduce( ( acc, story ) => {
+				acc[ story.id ] = story;
+				return acc;
+			}, {} ),
 		};
 	} catch ( error ) {
 		const message =
 			error?.message ||
 			__(
 				'Error fetching stories. Please try again.',
+				'newspack-story-budget'
+			);
+		return {
+			type: 'STORIES_ERROR',
+			payload: { message },
+		};
+	}
+}
+
+/**
+ * Refresh stories modified since a certain timestamp from the API.
+ *
+ * @return {Object} Action object.
+ */
+export function* refreshStories() {
+	const cachedStories = getCache( 'stories' );
+	const { timestamp } = cachedStories || {};
+
+	yield { type: 'REFRESH_START' };
+	try {
+		const params = { metadata: true };
+		if ( timestamp ) {
+			params.since = Math.floor( timestamp / 1000 ) // UNIX timestamp in seconds.
+		}
+		const result = yield apiFetch( {
+			path: addQueryArgs( `${ apiNamespace }/stories`, params ),
+		} );
+		const { stories, total } = result;
+		while ( stories.length < total ) {
+			params.offset = stories.length;
+			const next = yield apiFetch( {
+				path: addQueryArgs( `${ apiNamespace }/stories`, params ),
+			} );
+			stories.push( ...next.stories );
+		}
+		return {
+			type: 'STORIES_APPEND',
+			payload: stories.reduce( ( acc, story ) => {
+				acc[ story.id ] = story;
+				return acc;
+			}, {} ),
+		};
+	} catch ( error ) {
+		const message =
+			error?.message ||
+			__(
+				'Error refreshing stories. Please try again.',
 				'newspack-story-budget'
 			);
 		return {
@@ -210,7 +287,7 @@ export function* fetchStoryMetaBatch( storyIds ) {
 	const result = yield apiFetch( {
 		path: `${ apiNamespace }/stories/meta/batch`,
 		method: 'POST',
-		data: { story_ids: storyIds },
+		data: { ids: storyIds },
 	} );
 	return {
 		type: 'STORY_META_BATCH_SET',
@@ -233,6 +310,7 @@ export function* saveStory( id, story ) {
 			method: 'POST',
 			data: story,
 		} );
+		yield { type: 'STORIES_ADD', payload: result };
 		return {
 			type: 'SAVE_STORY_SUCCESS',
 			payload: result,

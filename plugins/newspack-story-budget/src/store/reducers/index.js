@@ -8,9 +8,8 @@ import meta from './meta';
 import view from './view';
 import errors from './errors';
 
-import { STORAGE_KEYS } from '../constants';
-
-import reducerActions from '../utils/reducer-actions';
+import { STORAGE_KEYS, setCache } from '../cache';
+import cachedActions from '../utils/cached-actions';
 
 const appReducer = combineReducers( {
 	budgets,
@@ -32,12 +31,10 @@ const reducer = ( state, action ) => {
 
 	const newState = appReducer( state, action );
 
+	// Store cacheable state.
 	for ( const key in STORAGE_KEYS ) {
-		if ( reducerActions[ key ]?.[ action.type ] ) {
-			sessionStorage.setItem(
-				STORAGE_KEYS[ key ],
-				JSON.stringify( newState[ key ] )
-			);
+		if ( cachedActions[ key ]?.[ action.type ] ) {
+			setCache( key, newState[ key ] );
 		}
 	}
 

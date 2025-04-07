@@ -8,6 +8,7 @@
 namespace Newspack_Story_Budget\Fields;
 
 use Newspack_Story_Budget\Budgets;
+use Newspack_Story_Budget\Fields as Fields_Class;
 
 /**
  * Class for editable fields.
@@ -144,6 +145,7 @@ class Editable_Field extends Abstract_Field {
 	 */
 	public function update_value( $post_id, $value ) {
 		if ( ! is_null( $this->save_value_callback ) ) {
+			Fields_Class::update_modified( $post_id );
 			return call_user_func( $this->save_value_callback, $post_id, $value );
 		}
 
@@ -199,6 +201,7 @@ class Editable_Field extends Abstract_Field {
 		if ( ! is_null( $this->save_value_callback ) ) {
 			$current_values = $this->get_value( $post_id, [] );
 			$new_values     = array_values( array_unique( array_merge( $current_values, [ $value ] ) ) );
+			Fields_Class::update_modified( $post_id );
 			return call_user_func( $this->save_value_callback, $post_id, $new_values );
 		}
 
@@ -225,6 +228,7 @@ class Editable_Field extends Abstract_Field {
 			} else {
 				return false;
 			}
+			Fields_Class::update_modified( $post_id );
 			return call_user_func( $this->save_value_callback, $post_id, $new_values );
 		}
 
@@ -232,6 +236,7 @@ class Editable_Field extends Abstract_Field {
 		if ( ! $updated ) {
 			return false;
 		}
+		Fields_Class::update_modified( $post_id );
 		return true;
 	}
 

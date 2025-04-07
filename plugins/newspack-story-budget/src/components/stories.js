@@ -69,26 +69,32 @@ const TableRowField = ( { story, field, allowEdit = false } ) => {
 };
 
 export default () => {
-	const { view, stories, fields, isLoading, progress, errors } = useSelect(
+	const { view, stories, fields, isLoading, isRefreshing, progress, errors } = useSelect(
 		select => ( {
 			view: select( storeNamespace ).getView(),
 			stories: select( storeNamespace ).getStories(),
 			fields: select( storeNamespace ).getFields(),
 			isLoading: select( storeNamespace ).isLoading(),
+			isRefreshing: select( storeNamespace ).isRefreshing(),
 			progress: select( storeNamespace ).getProgress(),
 			errors: select( storeNamespace ).getErrors(),
 		} )
 	);
 	const [ editMode, setEditMode ] = useState( false );
 	const [ modalOpen, setModalOpen ] = useState( false );
+	const currentStories = stories.slice(
+		( view.page - 1 ) * view.perPage,
+		( view.page - 1 ) * view.perPage + view.perPage
+	);
 
 	const {
 		clearErrors,
 		setView,
 		setSearching,
 		search,
-		fetchStories,
+		fetchFields,
 		fetchStory,
+		refreshStories,
 	} = useDispatch( storeNamespace );
 
 	const doSearch = debounce( search, 300 );
@@ -100,7 +106,7 @@ export default () => {
 		}
 	}, [ view.search ] );
 
-	if ( isLoading && progress < 1 ) {
+	if ( isLoading && undefined !== progress && progress < 1 ) {
 		return (
 			<div className="newspack-story-budget__loading">
 				<ProgressBar value={ Math.ceil( progress * 100 ) } />
@@ -160,10 +166,16 @@ export default () => {
 			<TableRowField
 				story={ value.item }
 				field={ field }
-				allowEdit={ editMode }
+				allowEdit={ editMode && ! isRefreshing }
 			/>
 		),
 	} ) );
+
+	const refresh = () => {
+		clearErrors();
+		fetchFields();
+		refreshStories();
+	};
 
 	const actions = [
 		{
@@ -227,10 +239,7 @@ export default () => {
 					>
 						<Button
 							variant="primary"
-							onClick={ () => {
-								clearErrors();
-								fetchStories();
-							} }
+							onClick={ refresh }
 						>
 							{ __( 'Refetch stories', 'newspack-story-budget' ) }
 						</Button>
@@ -247,14 +256,7 @@ export default () => {
 			view={ view }
 			onChangeView={ setView }
 			actions={ actions }
-			data={
-				isLoading
-					? []
-					: stories.slice(
-							( view.page - 1 ) * view.perPage,
-							( view.page - 1 ) * view.perPage + view.perPage
-					  )
-			}
+			data={ isLoading ? [] : currentStories }
 			paginationInfo={ {
 				totalItems: stories.length,
 				totalPages: Math.ceil( stories.length / view.perPage ),
@@ -266,6 +268,13 @@ export default () => {
 			} }
 			header={
 				<HStack spacing={ 4 } style={ { marginLeft: '12px' } }>
+					<Button
+						className={ isLoading || isRefreshing ? 'newspack-story-budget__refresh-button-is-busy' : 'newspack-story-budget__refresh-button' }
+						icon={ <Icon icon={ update } /> }
+						disabled={ isLoading || isRefreshing }
+						label={ isLoading || isRefreshing ? __( 'Loading stories…', 'newspack-story-budget' ) : __( 'Refresh all stories', 'newspack-story-budget' ) }
+						onClick={ refresh }
+					/>
 					<ToggleControl
 						label="Edit mode"
 						checked={ editMode }

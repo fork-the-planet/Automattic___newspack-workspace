@@ -3,6 +3,7 @@ import { createSelector } from '@wordpress/data';
 import utils from '../utils';
 
 export const isLoading = state => state.meta.loading || state.meta.searching;
+export const isRefreshing = state => state.meta.refreshing;
 
 export const isLoadingStory = ( state, id ) =>
 	state.meta.loadingStory?.[ id ] ?? false;

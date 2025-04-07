@@ -141,6 +141,7 @@ export default ( {
 						) }
 						<form
 							onSubmit={ async e => {
+								clearErrors( storyId, fieldId );
 								e.preventDefault();
 								if ( saveInPlace ) {
 									const response = await saveStoryField(

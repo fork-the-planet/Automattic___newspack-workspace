@@ -9,6 +9,8 @@
 
 namespace Newspack_Story_Budget;
 
+use Newspack_Story_Budget\Fields\Abstract_Field;
+
 /**
  * Test API Class.
  */
@@ -34,7 +36,8 @@ class Test_API extends \WP_UnitTestCase {
 			]
 		);
 		foreach ( self::$stories as $i => $post_id ) {
-			wp_set_post_terms( $post_id, [ self::$budgets[ $i % 2 ] ], Budgets::TAXONOMY );
+			$story = new Story( $post_id );
+			$story->update_budgets( [ self::$budgets[ $i % 2 ] ] );
 		}
 	}
 
@@ -65,6 +68,85 @@ class Test_API extends \WP_UnitTestCase {
 
 		$this->assertCount( 100, $data['stories'] );
 		$this->assertEquals( 100, $data['total'] );
+	}
+
+	/**
+	 * Test get stories with specific IDs.
+	 */
+	public function test_get_stories_with_ids() {
+		// Get a subset of story IDs to test with.
+		$story_ids = array_slice( self::$stories, 0, 3 );
+
+		$request = new \WP_REST_Request( 'GET', sprintf( '%s/stories', API::NAMESPACE ) );
+		$request->set_param( 'ids', $story_ids );
+
+		$response = API::get_stories( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+
+		$data = $response->get_data();
+
+		$this->assertCount( 3, $data['stories'], 'Should get 3 stories.' );
+		$this->assertEquals( 3, $data['total'] );
+
+		// Verify we got the correct stories.
+		$response_story_ids = array_map(
+			function( $story ) {
+				return $story['id'];
+			},
+			$data['stories']
+		);
+
+		$this->assertEquals( $story_ids, $response_story_ids );
+
+		$story_ids[] = 99999; // Bogus story ID.
+		$request->set_param( 'ids', $story_ids );
+		$this->assertCount( 4, $request->get_param( 'ids' ) );
+
+		$response = API::get_stories( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+
+		$data = $response->get_data();
+
+		$this->assertCount( 3, $data['stories'], 'Invalid story IDs should be ignored.' );
+		$this->assertEquals( 3, $data['total'] );
+	}
+
+	/**
+	 * Test get stories modified or created since a timestamp.
+	 */
+	public function test_get_stories_since() {
+		// Get current timestamp.
+		$current_time = time();
+
+		sleep( 1 );
+
+		// Create a new story after the timestamp.
+		$new_story = self::factory()->post->create(
+			[
+				'post_type' => 'post',
+				'post_date' => gmdate( 'Y-m-d H:i:s', $current_time + 1 ),
+			]
+		);
+		$story = new Story( $new_story );
+		$story->update_budgets( [ self::$budgets[0] ] );
+
+		$request = new \WP_REST_Request( 'GET', sprintf( '%s/stories', API::NAMESPACE ) );
+		$request->set_param( 'since', $current_time );
+		$request->set_param( 'metadata', true );
+
+		$response = API::get_stories( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+
+		$data = $response->get_data();
+
+		// Should only get the new story we created.
+		$this->assertCount( 1, $data['stories'], 'Should only get the new story we created.' );
+		$this->assertEquals( 1, $data['total'], 'Should only get the new story we created.' );
+		$this->assertEquals( $new_story, $data['stories'][0]['id'], 'Should only get the new story we created.' );
+		$this->assertArrayHasKey( 'metadata', $data['stories'][0], 'Should get metadata.' );
 	}
 
 	/**
@@ -104,7 +186,8 @@ class Test_API extends \WP_UnitTestCase {
 				'post_title' => 'Test Search String',
 			]
 		);
-		wp_set_post_terms( $story, [ self::$budgets[0] ], Budgets::TAXONOMY );
+		$story_obj = new Story( $story );
+		$story_obj->update_budgets( [ self::$budgets[0] ] );
 
 		$request = new \WP_REST_Request( 'GET', sprintf( '%s/stories/search', API::NAMESPACE ) );
 		$request->set_param( 's', 'Test Search String' );
@@ -199,7 +282,8 @@ class Test_API extends \WP_UnitTestCase {
 				'post_title' => 'Test Search String',
 			]
 		);
-		wp_set_post_terms( $story, [ $budget_id ], Budgets::TAXONOMY );
+		$story_obj = new Story( $story );
+		$story_obj->update_budgets( [ $budget_id ] );
 
 		$request = new \WP_REST_Request( 'GET', sprintf( '%s/budgets/%d/stories/search', API::NAMESPACE, $budget_id ) );
 		$request->set_param( 'id', $budget_id );

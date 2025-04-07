@@ -481,6 +481,17 @@ class Fields {
 				\delete_post_meta( $post_id, $field->get_post_meta_name() );
 			}
 		}
+		self::update_modified( $post_id );
+	}
+
+	/**
+	 * Update the modified timestamp for the post.
+	 * This is needed because wp_post_update by itself doesn't update the modified timestamp.
+	 *
+	 * @param int $post_id The post ID to update the modified timestamp for.
+	 */
+	public static function update_modified( $post_id ) {
+		\update_post_meta( $post_id, Abstract_Field::FIELD_PREFIX . '_modified', time() );
 	}
 
 	/**

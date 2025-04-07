@@ -6,17 +6,26 @@ export default ( state = INITIAL_STATE.meta, action ) => {
 			return {
 				...state,
 				loading: true,
+				refreshing: false,
 			};
 		case 'FETCH_PROGRESS':
 			return {
 				...state,
 				progress: action.payload.progress,
 			};
+		case 'REFRESH_START':
+			return {
+				...state,
+				loading: false,
+				refreshing: true,
+			};
 		case 'STORIES_SET':
+		case 'STORIES_APPEND':
 		case 'STORIES_ERROR':
 			return {
 				...state,
 				loading: false,
+				refreshing: false,
 			};
 		case 'SEARCH_START':
 			return {
@@ -88,6 +97,10 @@ export default ( state = INITIAL_STATE.meta, action ) => {
 				},
 			};
 		case 'STORY_META_BATCH_START':
+			return {
+				...state,
+				storyMetaFetchQueue: {},
+			};
 		case 'STORY_META_BATCH_SET':
 			return {
 				...state,

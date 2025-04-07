@@ -8,6 +8,7 @@
 namespace Newspack_Story_Budget\Fields;
 
 use Newspack_Story_Budget\Budgets;
+use Newspack_Story_Budget\Fields;
 
 /**
  * Abstract class to represent a single story budget field.
@@ -395,6 +396,7 @@ abstract class Abstract_Field {
 		if ( ! $updated ) {
 			return false;
 		}
+		Fields::update_modified( $post_id );
 		return true;
 	}
 

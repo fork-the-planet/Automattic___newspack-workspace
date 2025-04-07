@@ -7,6 +7,8 @@
 
 namespace Newspack_Story_Budget;
 
+use Newspack_Story_Budget\Fields\Abstract_Field;
+
 /**
  * API Class.
  */
@@ -43,12 +45,27 @@ class API {
 				'callback'            => [ __CLASS__, 'get_stories' ],
 				'permission_callback' => [ __CLASS__, 'stories_permission_callback' ],
 				'args'                => [
-					'limit'  => [
+					'metadata' => [
+						'description' => __( 'Whether to include metadata in the response.', 'newspack-story-budget' ),
+						'type'        => 'boolean',
+					],
+					'limit'    => [
 						'description' => __( 'Number of stories to return.', 'newspack-story-budget' ),
 						'type'        => 'integer',
 					],
-					'offset' => [
+					'offset'   => [
 						'description' => __( 'Offset.', 'newspack-story-budget' ),
+						'type'        => 'integer',
+					],
+					'ids'      => [
+						'description' => __( 'Array of story IDs to fetch.', 'newspack-story-budget' ),
+						'type'        => 'array',
+						'items'       => [
+							'type' => 'integer',
+						],
+					],
+					'since'    => [
+						'description' => __( 'Date in UNIX timestamp format to fetch stories modified since this time.', 'newspack-story-budget' ),
 						'type'        => 'integer',
 					],
 				],
@@ -73,7 +90,7 @@ class API {
 				'callback'            => [ __CLASS__, 'get_stories_meta_batch' ],
 				'permission_callback' => [ __CLASS__, 'stories_permission_callback' ],
 				'args'                => [
-					'story_ids' => [
+					'ids' => [
 						'description' => __( 'Array of story IDs to fetch meta for.', 'newspack-story-budget' ),
 						'type'        => 'array',
 						'items'       => [
@@ -271,18 +288,48 @@ class API {
 			'offset'         => $request->get_param( 'offset' ) ?? 0,
 		];
 
+		// If fetching specific stories by ID.
+		if ( $request->get_param( 'ids' ) ) {
+			// Validate story IDs.
+			$story_ids                    = array_values(
+				array_filter(
+					$request->get_param( 'ids' ),
+					function( $id ) {
+						$story = new Story( $id );
+						return $story->is_valid();
+					}
+				)
+			);
+			$query_args['post__in']       = $story_ids;
+			$query_args['posts_per_page'] = count( $query_args['post__in'] );
+			$query_args['offset']         = 0;
+		}
+
+		// If fetching stories modified since a certain timestamp.
+		if ( $request->get_param( 'since' ) ) {
+			$query_args['meta_query'] = [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				[
+					'key'     => Abstract_Field::FIELD_PREFIX . '_modified',
+					'value'   => $request->get_param( 'since' ),
+					'compare' => '>',
+				],
+			];
+		}
+
 		// If the user is not an editor, filter the stories by the user's stories.
 		if ( ! current_user_can( 'edit_others_posts' ) ) {
 			$query_args['author'] = get_current_user_id();
 		}
 
-		$stories = Budgets::get_stories( $query_args );
+		$stories          = Budgets::get_stories( $query_args );
+		$include_metadata = boolval( $request->get_param( 'metadata' ) );
 
 		return rest_ensure_response(
 			[
 				'stories' => array_map(
-					function( $story ) {
-						return $story->to_array( false );
+					function( $story ) use ( $include_metadata ) {
+						// If fetching specific stories by ID or modified since a certain timestamp, include metadata.
+						return $story->to_array( $include_metadata );
 					},
 					$stories
 				),
@@ -314,7 +361,7 @@ class API {
 	 * @return \WP_REST_Response
 	 */
 	public static function get_stories_meta_batch( $request ) {
-		$story_ids = $request->get_param( 'story_ids' );
+		$story_ids = $request->get_param( 'ids' );
 
 		$is_editor = current_user_can( 'edit_others_posts' );
 

@@ -1,3 +1,7 @@
+/**
+ * Internal dependencies
+ */
+import { getCache } from './cache';
 import { NAMESPACE } from './constants';
 
 export const getFields =
@@ -29,7 +33,13 @@ export const getBudgets =
 export const getStories =
 	() =>
 	async ( { dispatch } ) => {
-		await dispatch.fetchStories();
+		// If there are cached stories, refresh the cache. Otherwise, do a full fetch.
+		const cachedStories = getCache( 'stories' );
+		if ( cachedStories?.data && cachedStories?.timestamp ) {
+			await dispatch.refreshStories();
+		} else {
+			await dispatch.fetchStories();
+		}
 	};
 
 export const getStoriesMeta =
@@ -57,8 +67,10 @@ export const getStory =
 export const getStoryMeta =
 	( id, key ) =>
 	async ( { dispatch, resolveSelect, select } ) => {
+		const meta = select.getStoryMeta( id, key );
+
 		// Bail if the metadata is already fetched.
-		if ( Object.keys( select.getStoryMeta( id, key ) ).length > 0 ) {
+		if ( meta && Object.keys( meta ).length > 0 ) {
 			return;
 		}
 		// Fetch story and bail if it's not fetched.

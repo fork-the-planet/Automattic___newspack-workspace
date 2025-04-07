@@ -72,6 +72,21 @@ body.toplevel_page_newspack-story-budget {
 			}
 		}
 	}
+	&__refresh-button-is-busy {
+		animation: refresh-rotate 1s infinite;
+	}
+
+	@keyframes refresh-rotate {
+		0% {
+			transform: rotate(0deg);
+		}
+		50% {
+			transform: rotate(-180deg);
+		}
+		100% {
+			transform: rotate(-180deg);
+		}
+	}
 	&__field-row {
 		max-width: 280px;
 		align-items: flex-start !important;

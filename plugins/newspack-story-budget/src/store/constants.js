@@ -1,11 +1,5 @@
 export const NAMESPACE = 'newspack-story-budget';
 
-export const STORAGE_KEY_BASE = 'newspack-story-budget';
-
-export const STORAGE_KEYS = {
-	view: `${ STORAGE_KEY_BASE }-view`,
-};
-
 export const INITIAL_STATE = {
 	budgets: [],
 	stories: {},
@@ -14,7 +8,7 @@ export const INITIAL_STATE = {
 	errors: {},
 	meta: {
 		loading: false,
-		progress: 0,
+		refreshing: false,
 		searching: false,
 		storyMetaFetchQueue: {},
 		stories: {
@@ -28,6 +22,10 @@ export const INITIAL_STATE = {
 		perPage: 10,
 		fields: [],
 		filters: [],
+		sort: {
+			field: 'last_modified',
+			direction: 'desc',
+		},
 		layout: {
 			density: 'compact',
 		},
