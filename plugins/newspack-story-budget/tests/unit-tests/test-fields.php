@@ -199,4 +199,49 @@ class TestFields extends WP_UnitTestCase {
 		);
 		$this->assertFalse( $read_only->has_errors(), 'Read-only fields are registered with a callback to get their value.' );
 	}
+
+	/**
+	 * Test that get_all_fields returns fields sorted by default_order.
+	 */
+	public function test_get_all_fields_sort_order() {
+		// Get all fields.
+		$all_fields = Fields::get_all_fields();
+
+		// Verify we have fields.
+		$this->assertNotEmpty( $all_fields, 'Fields should not be empty.' );
+
+		// Check if fields are sorted by default_order.
+		$previous_order = -1;
+		foreach ( $all_fields as $slug => $field ) {
+			$current_order = $field->get_default_order();
+
+			// Verify that each field's default_order is greater than or equal to the previous one.
+			$this->assertGreaterThanOrEqual(
+				$previous_order,
+				$current_order,
+				sprintf( 'Field "%s" with order %d should come after field with order %d.', $slug, $current_order, $previous_order )
+			);
+
+			$previous_order = $current_order;
+		}
+
+		// Test with $as_array = true.
+		$all_fields_array = Fields::get_all_fields( true );
+
+		// Verify we have the same number of fields.
+		$this->assertEquals(
+			count( $all_fields ),
+			count( $all_fields_array ),
+			'The number of fields should be the same whether returned as objects or arrays.'
+		);
+
+		// Verify that the array version maintains the same keys.
+		foreach ( $all_fields as $slug => $field ) {
+			$this->assertArrayHasKey(
+				$slug,
+				$all_fields_array,
+				sprintf( 'Array version should have the same key "%s" as the object version.', $slug )
+			);
+		}
+	}
 }

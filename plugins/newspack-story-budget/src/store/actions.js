@@ -102,6 +102,19 @@ export function* search( str ) {
 }
 
 export function setView( args ) {
+	const view = select( NAMESPACE ).getView();
+	if ( args.fields && view.fields ) {
+		const fields = select( NAMESPACE ).getFields();
+		args.fields = args.fields.sort( ( a, b ) => {
+			// Allow visible columns to be sorted.
+			if ( -1 < view.fields.indexOf( a ) ) {
+				return 0;
+			}
+			// When displaying hidden columns, sort by default order.
+			return fields.find( f => f.slug === a )?.default_order -
+				fields.find( f => f.slug === b )?.default_order;
+		} );
+	}
 	return {
 		type: 'VIEW_SET',
 		payload: args,

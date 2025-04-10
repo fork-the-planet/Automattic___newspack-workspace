@@ -111,6 +111,13 @@ abstract class Abstract_Field {
 	protected $type = 'text';
 
 	/**
+	 * The default order of the field in the WP posts table.
+	 *
+	 * @var int
+	 */
+	protected $default_order = PHP_INT_MAX;
+
+	/**
 	 * Optional callback used to dynamically calculate the value of the field.
 	 *
 	 * @var callable|null
@@ -182,6 +189,10 @@ abstract class Abstract_Field {
 			}
 		}
 
+		if ( isset( $args['default_order'] ) ) {
+			$this->default_order = (float) $args['default_order'];
+		}
+
 		if ( 191 < strlen( $this->get_post_meta_name() ) ) {
 			$this->errors->add(
 				'newspack_story_budget_field_slug_too_long',
@@ -245,6 +256,15 @@ abstract class Abstract_Field {
 	 */
 	public function get_type() {
 		return $this->type;
+	}
+
+	/**
+	 * Get the field's default order.
+	 *
+	 * @return int The field's default order.
+	 */
+	public function get_default_order() {
+		return $this->default_order;
 	}
 
 	/**
@@ -319,6 +339,7 @@ abstract class Abstract_Field {
 			'name'                    => $this->name,
 			'description'             => $this->description,
 			'type'                    => $this->type,
+			'default_order'           => $this->default_order,
 			'is_editable'             => $this->is_editable,
 			'is_multiple'             => $this->is_multiple,
 			'is_filterable'           => $this->is_filterable,

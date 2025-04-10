@@ -106,6 +106,7 @@ class Fields {
 				'show_in_editor'          => true,
 				'slug'                    => 'name',
 				'type'                    => 'text',
+				'default_order'           => 0,
 			],
 			[
 				'description'        => __( 'The post title.', 'newspack-story-budget' ),
@@ -115,6 +116,7 @@ class Fields {
 				'name'               => __( 'Title', 'newspack-story-budget' ),
 				'slug'               => 'title',
 				'type'               => 'text',
+				'default_order'      => 1,
 			],
 			[
 				'description'    => __( 'An internal description for the story.', 'newspack-story-budget' ),
@@ -125,6 +127,7 @@ class Fields {
 				'show_in_editor' => true,
 				'slug'           => 'description',
 				'type'           => 'longtext',
+				'default_order'  => 2,
 			],
 			[
 				'description'             => Budgets::is_multiple_budgets_enabled() ? __( 'Story budgets this story is assigned to.', 'newspack-story-budget' ) : __( 'Story budget this story is assigned to.', 'newspack-story-budget' ),
@@ -155,6 +158,7 @@ class Fields {
 					},
 					Budgets::get_budgets()
 				),
+				'default_order'           => 3,
 			],
 			[
 				'default_value'           => function() {
@@ -173,6 +177,7 @@ class Fields {
 				'options'                 => Statuses::get_statuses_arrays(),
 				'save_value_callback'     => [ __CLASS__, 'save_post_status' ],
 				'get_value_callback'      => [ __CLASS__, 'get_post_status' ],
+				'default_order'           => 4,
 			],
 			[
 				'description'        => __( 'The word count of the story.', 'newspack-story-budget' ),
@@ -183,6 +188,7 @@ class Fields {
 				'show_in_table'      => true,
 				'slug'               => 'word_count',
 				'type'               => 'number',
+				'default_order'      => 5,
 			],
 			[
 				'description'        => __( 'Number of images in story content, not including the featured image.', 'newspack-story-budget' ),
@@ -193,6 +199,7 @@ class Fields {
 				'show_in_table'      => true,
 				'slug'               => 'image_count',
 				'type'               => 'number',
+				'default_order'      => 6,
 			],
 			[
 				'description'        => __( 'Time of last modification.', 'newspack-story-budget' ),
@@ -203,6 +210,7 @@ class Fields {
 				'show_in_table'      => true,
 				'slug'               => 'last_modified',
 				'type'               => 'datetime',
+				'default_order'      => 7,
 			],
 			[
 				'description'        => __( 'The date the story was published online.', 'newspack-story-budget' ),
@@ -213,6 +221,7 @@ class Fields {
 				'show_in_table'      => true,
 				'slug'               => 'publish_date',
 				'type'               => 'date',
+				'default_order'      => 8,
 			],
 			[
 				'description'        => __( 'The user who published the story online.', 'newspack-story-budget' ),
@@ -222,6 +231,7 @@ class Fields {
 				'post_save_callback' => [ __CLASS__, 'get_published_user' ],
 				'slug'               => 'published_by',
 				'type'               => 'text',
+				'default_order'      => 9,
 			],
 			[
 				'description'        => __( 'Authors assigned to the post.', 'newspack-story-budget' ),
@@ -233,6 +243,7 @@ class Fields {
 				'show_in_table'      => true,
 				'slug'               => 'authors',
 				'type'               => 'text',
+				'default_order'      => 10,
 			],
 			[
 				'description'        => __( 'Categories assigned to the post.', 'newspack-story-budget' ),
@@ -243,6 +254,7 @@ class Fields {
 				'name'               => __( 'Categories', 'newspack-story-budget' ),
 				'slug'               => 'categories',
 				'type'               => 'text',
+				'default_order'      => 11,
 			],
 			[
 				'description'        => __( 'Whether the story is currently being edited by another user.', 'newspack-story-budget' ),
@@ -253,6 +265,7 @@ class Fields {
 				'show_in_table'      => true,
 				'slug'               => 'is_locked',
 				'type'               => 'boolean',
+				'default_order'      => 12,
 			],
 			[
 				'description'        => __( 'The status of the post in WordPress.', 'newspack-story-budget' ),
@@ -263,6 +276,7 @@ class Fields {
 				'show_in_table'      => false,
 				'slug'               => 'wp_status',
 				'type'               => 'text',
+				'default_order'      => 13,
 			],
 
 			// Fields specific to NNE Concord.
@@ -276,6 +290,7 @@ class Fields {
 				'show_in_table' => true,
 				'slug'          => 'nne_print_rank',
 				'type'          => 'text',
+				'default_order' => 14,
 			],
 			[
 				'description'   => __( 'Print page of the story.', 'newspack-story-budget' ),
@@ -287,6 +302,7 @@ class Fields {
 				'show_in_table' => true,
 				'slug'          => 'nne_print_page',
 				'type'          => 'text',
+				'default_order' => 15,
 			],
 			[
 				'description'   => __( 'Print length of the story, in inches.', 'newspack-story-budget' ),
@@ -296,6 +312,7 @@ class Fields {
 				'show_in_table' => true,
 				'slug'          => 'nne_print_length',
 				'type'          => 'number',
+				'default_order' => 16,
 			],
 			[
 				'description'   => __( 'The websites this story will be published on.', 'newspack-story-budget' ),
@@ -337,6 +354,7 @@ class Fields {
 						'value' => 'vnews.com',
 					],
 				],
+				'default_order' => 17,
 			],
 			[
 				'description'   => __( 'The print publications this story will be published on.', 'newspack-story-budget' ),
@@ -390,6 +408,7 @@ class Fields {
 						'value' => 'vnews.com',
 					],
 				],
+				'default_order' => 18,
 			],
 		];
 	}
@@ -402,15 +421,24 @@ class Fields {
 	 * @return \Newspack_Story_Budget\Fields\Abstract_Field|array[] Array of field objects or info.
 	 */
 	public static function get_all_fields( $as_array = false ) {
+		// Sort fields by default_order.
+		$sorted_fields = array_values( self::$all_fields );
+		uasort(
+			$sorted_fields,
+			function( $a, $b ) {
+				return $a->get_default_order() - $b->get_default_order();
+			}
+		);
+
 		if ( $as_array ) {
 			return array_map(
 				function( $field ) {
 					return $field->to_array();
 				},
-				self::$all_fields
+				$sorted_fields
 			);
 		}
-		return self::$all_fields;
+		return $sorted_fields;
 	}
 
 	/**
