@@ -6,6 +6,7 @@ import { __ } from '@wordpress/i18n';
 import {
 	__experimentalHStack as HStack,
 	__experimentalVStack as VStack,
+	__experimentalSpacer as Spacer,
 	Icon,
 	Spinner,
 	Button,
@@ -181,6 +182,21 @@ export default ( { storyId, onCancel } ) => {
 								? __( 'Cancel', 'newspack-story-budget' )
 								: __( 'Close', 'newspack-story-budget' ) }
 						</Button>
+						<Spacer />
+						{ ! isLoadingStory &&
+							canEditStory &&
+							story.metadata.edit_url && (
+								<Button
+									variant="link"
+									href={ story.metadata.edit_url }
+									target="_blank"
+								>
+									{ __(
+										'Edit post',
+										'newspack-story-budget'
+									) }
+								</Button>
+							) }
 						{ isLoadingStory && <Spinner /> }
 					</HStack>
 				) }
