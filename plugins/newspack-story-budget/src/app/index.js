@@ -138,7 +138,7 @@ const StoryBudget = () => {
 							</AppHeaderActions>
 							<Stories />
 							<Switch>
-								<Route path="/stories/new/:budgetId?" exact>
+								<Route path="/stories/new" exact>
 									<ModalPage
 										title={ __(
 											'Add New Story / Create New Story',
@@ -203,7 +203,6 @@ const StoryBudget = () => {
 					{ notices.map( ( notice ) => (
 						<Snackbar
 							key={ notice.id }
-							actions={ notice.actions }
 							onDismiss={ notice.onDismiss }
 						>
 							{ notice.content }
