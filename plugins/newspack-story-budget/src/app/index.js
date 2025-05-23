@@ -22,8 +22,11 @@ import {
 	SlotFillProvider,
 	DropdownMenu,
 	Icon,
+	Snackbar,
 } from '@wordpress/components';
 import { plus } from '@wordpress/icons';
+import { store as noticesStore } from '@wordpress/notices';
+import { useSelect } from '@wordpress/data';
 
 /**
  * Internal dependencies.
@@ -34,6 +37,8 @@ import Stories from '../components/stories';
 import Story from '../components/story';
 import Budgets from '../components/budgets';
 import CreateNewStory from '../components/create-new-story';
+import CreateBudgetModal from '../components/create-budget-modal';
+import { NOTICE_CONTEXT } from '../store/constants';
 import '../style.scss';
 
 const ModalPage = ( { children, name, closeHref, ...props } ) => {
@@ -70,6 +75,8 @@ const StoryPage = () => {
 
 const StoryBudget = () => {
 	const location = useLocation();
+
+	const notices = useSelect( ( select ) => select( noticesStore ).getNotices( NOTICE_CONTEXT ) );
 
 	const navigationItems = [
 		{ label: __( 'Stories', 'newspack-story-budget' ), path: '/stories' },
@@ -180,12 +187,27 @@ const StoryBudget = () => {
 											'newspack-story-budget'
 										) }
 										closeHref="#/budgets"
-									/>
+										name={ 'create-budget' }
+									>
+										<CreateBudgetModal
+											onClose={ () => ( window.location.href = "#/budgets" ) }
+										/>
+									</ModalPage>
 								</Route>
 							</Switch>
 						</Route>
 						<Redirect to="/stories" />
 					</Switch>
+				</div>
+				<div className="newspack-story-budget__notices">
+					{ notices.map( ( notice ) => (
+						<Snackbar
+							key={ notice.id }
+							onDismiss={ notice.onDismiss }
+						>
+							{ notice.content }
+						</Snackbar>
+					) ) }
 				</div>
 			</div>
 		</SlotFillProvider>
