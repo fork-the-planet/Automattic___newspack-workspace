@@ -168,14 +168,21 @@ export default ( {
 							} }
 						>
 							<VStack spacing={ 4 }>
-								<StoryFieldControl
-									field={ field }
-									value={ editedValue }
-									onChange={ val => {
-										setEditedValue( val );
-										onChange( val );
+								<div
+									style={ {
+										maxHeight: '200px',
+										overflowY: 'auto',
 									} }
-								/>
+								>
+									<StoryFieldControl
+										field={ field }
+										value={ editedValue }
+										onChange={ val => {
+											setEditedValue( val );
+											onChange( val );
+										} }
+									/>
+								</div>
 								{ saveInPlace && (
 									<HStack
 										expanded

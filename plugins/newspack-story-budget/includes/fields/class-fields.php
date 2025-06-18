@@ -10,6 +10,7 @@ namespace Newspack_Story_Budget;
 use Newspack_Story_Budget\Fields\Abstract_Field;
 use Newspack_Story_Budget\Fields\Editable_Field;
 use Newspack_Story_Budget\Fields\Read_Only_Field;
+use Newspack_Story_Budget\Fields\Taxonomy_Field;
 use Newspack_Story_Budget\Fields\Statuses;
 
 /**
@@ -51,6 +52,8 @@ class Fields {
 		foreach ( $field_configs as $field_config ) {
 			if ( ! empty( $field_config['is_editable'] ) ) {
 				$field = new Editable_Field( $field_config );
+			} elseif ( ! empty( $field_config['taxonomy'] ) ) {
+				$field = new Taxonomy_Field( $field_config );
 			} else {
 				$field = new Read_Only_Field( $field_config );
 			}
@@ -253,15 +256,12 @@ class Fields {
 				'always_visible_in_table' => true,
 			],
 			[
-				'description'        => __( 'Categories assigned to the post.', 'newspack-story-budget' ),
-				'get_value_callback' => [ __CLASS__, 'get_categories' ],
-				'is_multiple'        => true,
-				'is_editable'        => false,
-				'is_filterable'      => 'always',
-				'name'               => __( 'Categories', 'newspack-story-budget' ),
-				'slug'               => 'categories',
-				'type'               => 'text',
-				'default_order'      => 16,
+				'description'   => __( 'Categories assigned to the post.', 'newspack-story-budget' ),
+				'taxonomy'      => 'category',
+				'is_filterable' => 'always',
+				'name'          => __( 'Categories', 'newspack-story-budget' ),
+				'slug'          => 'categories',
+				'default_order' => 16,
 			],
 			[
 				'description'             => __( 'Whether the story is currently being edited by another user.', 'newspack-story-budget' ),
@@ -682,33 +682,6 @@ class Fields {
 			return [];
 		}
 		return $authors;
-	}
-
-	/**
-	 * Get the categories assigned to the post.
-	 *
-	 * @param int $post_id The post ID.
-	 *
-	 * @return string[] Array of category names.
-	 */
-	public static function get_categories( $post_id = null ) {
-		if ( ! $post_id ) {
-			$post_id = \get_the_ID();
-		}
-		$story = new Story( $post_id );
-		if ( ! $story->is_valid() ) {
-			return [];
-		}
-		$categories = array_map(
-			function( $term ) {
-				return $term->name;
-			},
-			\get_the_category( $post_id )
-		);
-		if ( empty( $categories ) ) {
-			return [];
-		}
-		return $categories;
 	}
 
 	/**

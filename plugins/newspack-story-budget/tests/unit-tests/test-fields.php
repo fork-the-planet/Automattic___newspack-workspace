@@ -8,6 +8,7 @@
 use Newspack_Story_Budget\Fields;
 use Newspack_Story_Budget\Fields\Editable_Field;
 use Newspack_Story_Budget\Fields\Read_Only_Field;
+use Newspack_Story_Budget\Fields\Taxonomy_Field;
 
 /**
  * Class for testing fields and their functionality.
@@ -63,6 +64,87 @@ class TestFields extends WP_UnitTestCase {
 			'new value',
 			'Field returns set value.'
 		);
+	}
+
+	/**
+	 * Test a taxonomy field.
+	 */
+	public function test_taxonomy_field() {
+		$post_id = self::create_post();
+
+		$field = new Taxonomy_Field(
+			[
+				'name'     => 'Taxonomy',
+				'type'     => 'taxonomy',
+				'taxonomy' => 'category',
+			]
+		);
+
+		$this->assertEquals( 'Taxonomy', $field->get_name(), 'Field name is correct.' );
+		$this->assertTrue( $field->is_editable(), 'Field is editable.' );
+
+		// Create some terms.
+		$term_1 = wp_insert_term( 'Term 1', 'category' );
+		$term_2 = wp_insert_term( 'Term 2', 'category' );
+
+		// Create a child term.
+		$child_term = wp_insert_term(
+			'Child Term',
+			'category',
+			[
+				'parent' => $term_1['term_id'],
+			]
+		);
+
+		// Create a grandchild term.
+		$grandchild_term = wp_insert_term(
+			'Grandchild Term',
+			'category',
+			[
+				'parent' => $child_term['term_id'],
+			]
+		);
+
+		$options = $field->get_options();
+		$this->assertCount( 5, $options, 'All terms are options.' );
+		$this->assertEquals( 'Uncategorized', $options[0]['label'], 'First option is correct.' );
+
+		$this->assertEquals( 'Term 1', $options[1]['label'], 'Term option label is correct.' );
+		$this->assertEquals( $term_1['term_id'], $options[1]['value'], 'Term option value is correct.' );
+		$this->assertEquals( $child_term['term_id'], $options[2]['value'], 'Child term is sorted after parent.' );
+
+		$this->assertEquals( $grandchild_term['term_id'], $options[3]['value'], 'Grandchild term is sorted after child.' );
+		$this->assertEquals( 'Term 1 — Child Term — Grandchild Term', $options[3]['label'], 'Grandchild term label is correct.' );
+
+		$this->assertEquals( $term_2['term_id'], $options[4]['value'], 'Term 2 is sorted after all Term 1 children.' );
+	}
+
+	/**
+	 * Test a taxonomy field value.
+	 */
+	public function test_taxonomy_field_value() {
+		$post_id = self::create_post();
+
+		$term_1 = wp_insert_term( 'Term 1', 'category' );
+		$term_2 = wp_insert_term( 'Term 2', 'category' );
+
+		$field = new Taxonomy_Field(
+			[
+				'name'     => 'Taxonomy',
+				'type'     => 'taxonomy',
+				'taxonomy' => 'category',
+			]
+		);
+		$this->assertEquals( [ 1 ], $field->get_value( $post_id ), 'Field returns default category ID.' );
+
+		$field->update_value( $post_id, [ $term_1['term_id'] ] );
+		$this->assertEquals( [ $term_1['term_id'] ], $field->get_value( $post_id ), 'Field returns updated value.' );
+
+		$field->add_value( $post_id, $term_2['term_id'] );
+		$this->assertEquals( [ $term_1['term_id'], $term_2['term_id'] ], $field->get_value( $post_id ), 'Field returns updated value.' );
+
+		$field->delete_value( $post_id, $term_1['term_id'] );
+		$this->assertEquals( [ $term_2['term_id'] ], $field->get_value( $post_id ), 'Field returns updated value.' );
 	}
 
 	/**

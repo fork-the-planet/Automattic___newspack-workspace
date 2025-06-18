@@ -153,7 +153,7 @@ abstract class Abstract_Field {
 
 	/**
 	 * Weather the field should be show when creating a new story via add new story modal.
-	 * 
+	 *
 	 * @var bool
 	 */
 	protected $show_in_add_new_story = false;
@@ -182,18 +182,18 @@ abstract class Abstract_Field {
 		$this->errors = new \WP_Error();
 
 		$this->name                    = \sanitize_text_field( $args['name'] );
-		$this->description             = ! empty( $args['description'] ) ? \sanitize_text_field( $args['description'] ) : $this->description;
-		$this->slug                    = ! empty( $args['slug'] ) ? \sanitize_title( $args['slug'] ) : \sanitize_title( $this->name );
-		$this->is_filterable           = ! empty( $args['is_filterable'] ) && in_array( $args['is_filterable'], [ 'yes', 'no', 'always' ], true ) ? \sanitize_text_field( $args['is_filterable'] ) : $this->is_filterable;
+		$this->description             = isset( $args['description'] ) ? \sanitize_text_field( $args['description'] ) : $this->description;
+		$this->slug                    = isset( $args['slug'] ) ? \sanitize_title( $args['slug'] ) : \sanitize_title( $this->name );
+		$this->is_filterable           = isset( $args['is_filterable'] ) && in_array( $args['is_filterable'], [ 'yes', 'no', 'always' ], true ) ? \sanitize_text_field( $args['is_filterable'] ) : $this->is_filterable;
 		$this->default_order           = isset( $args['default_order'] ) ? (float) $args['default_order'] : $this->default_order;
-		$this->is_multiple             = ! empty( $args['is_multiple'] ) ? true : $this->is_multiple;
-		$this->is_searchable           = ! empty( $args['is_searchable'] ) ? true : $this->is_searchable;
-		$this->is_sortable             = ! empty( $args['is_sortable'] ) ? true : $this->is_sortable;
-		$this->show_in_table           = ! empty( $args['show_in_table'] ) ? true : $this->show_in_table;
-		$this->always_visible_in_table = ! empty( $args['always_visible_in_table'] ) ? true : $this->always_visible_in_table;
-		$this->show_in_editor          = ! empty( $args['show_in_editor'] ) ? true : $this->show_in_editor;
-		$this->show_in_wp_posts_table  = ! empty( $args['show_in_wp_posts_table'] ) ? true : $this->show_in_wp_posts_table;
-		$this->show_in_add_new_story   = ! empty( $args['show_in_add_new_story'] ) ? true : $this->show_in_add_new_story;
+		$this->is_multiple             = isset( $args['is_multiple'] ) ? (bool) $args['is_multiple'] : $this->is_multiple;
+		$this->is_searchable           = isset( $args['is_searchable'] ) ? (bool) $args['is_searchable'] : $this->is_searchable;
+		$this->is_sortable             = isset( $args['is_sortable'] ) ? (bool) $args['is_sortable'] : $this->is_sortable;
+		$this->show_in_table           = isset( $args['show_in_table'] ) ? (bool) $args['show_in_table'] : $this->show_in_table;
+		$this->always_visible_in_table = isset( $args['always_visible_in_table'] ) ? (bool) $args['always_visible_in_table'] : $this->always_visible_in_table;
+		$this->show_in_editor          = isset( $args['show_in_editor'] ) ? (bool) $args['show_in_editor'] : $this->show_in_editor;
+		$this->show_in_wp_posts_table  = isset( $args['show_in_wp_posts_table'] ) ? (bool) $args['show_in_wp_posts_table'] : $this->show_in_wp_posts_table;
+		$this->show_in_add_new_story   = isset( $args['show_in_add_new_story'] ) ? (bool) $args['show_in_add_new_story'] : $this->show_in_add_new_story;
 
 		if ( ! empty( $args['type'] ) ) {
 			$type = $this->set_type( $args['type'] );
@@ -344,15 +344,15 @@ abstract class Abstract_Field {
 	 */
 	public function to_array() {
 		return [
-			'slug'                    => $this->slug,
-			'name'                    => $this->name,
+			'slug'                    => $this->get_slug(),
+			'name'                    => $this->get_name(),
 			'description'             => $this->description,
-			'type'                    => $this->type,
+			'type'                    => $this->get_type(),
 			'default_order'           => $this->default_order,
-			'is_editable'             => $this->is_editable,
+			'is_editable'             => $this->is_editable(),
 			'is_multiple'             => $this->is_multiple,
 			'is_filterable'           => $this->is_filterable,
-			'is_searchable'           => $this->is_searchable,
+			'is_searchable'           => $this->is_searchable(),
 			'is_sortable'             => $this->is_sortable,
 			'show_in_table'           => $this->show_in_table,
 			'always_visible_in_table' => $this->always_visible_in_table,
