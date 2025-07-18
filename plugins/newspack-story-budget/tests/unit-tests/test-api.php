@@ -16,6 +16,7 @@ use Newspack_Story_Budget\Fields\Abstract_Field;
  */
 class Test_API extends \WP_UnitTestCase {
 
+	protected $administrator;
 	protected static $budgets = [];
 	protected static $stories = [];
 
