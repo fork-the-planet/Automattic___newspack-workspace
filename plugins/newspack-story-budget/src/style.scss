@@ -12,6 +12,8 @@ body.toplevel_page_newspack-story-budget {
 
 .wrap {
 	margin: 0 0 0 -20px;
+	position: relative;
+	z-index: 1;
 }
 
 /* Fix fullscreen modal content area */
@@ -27,38 +29,71 @@ body.toplevel_page_newspack-story-budget {
 .newspack-story-budget {
 	$parent-selector: &;
 
-	// Unused header.
-	&__header {
-		padding: 16px 48px;
-		border-bottom: 1px solid wp-colors.$gray-100;
-		min-height: 40px;
-		h1 {
-			flex-grow: 1;
-			flex-basis: 0;
-			white-space: nowrap;
-		}
-	}
 	&__content {
 		padding: 48px;
 		// DataViews custom styles for rendering inside content area.
 		.dataviews-wrapper {
-			overflow: visible;
-			margin-top: -16px;
+			overflow: auto;
+			height: calc(100vh - 140px);
+			margin-top: -48px;
+			margin-left: -48px;
+			margin-right: -48px;
+			padding-left: 48px;
+			padding-right: 48px;
+			padding-top: 48px;
 		}
 		.dataviews__view-actions,
 		.dataviews-filters__container {
 			padding: 16px 0;
+			position: sticky;
+			left: 0;
 		}
 		.dataviews-footer {
-			padding: 16px 8px;
+			left: -48px;
+			margin-left: -48px;
+			margin-right: -48px;
 		}
-		.dataviews-view-table tr td:first-child,
-		.dataviews-view-table tr th:first-child {
-			padding-left: 8px;
+		.dataviews-view-table {
+			margin-left: -8px;
+			thead {
+				top: -48px;
+				background: #fff;
+			}
+			tr td:first-child,
+			tr th:first-child {
+				padding-left: 8px;
+			}
+			&__actions-column {
+				position: sticky;
+				right: 0;
+				background: transparent;
+				vertical-align: middle;
+				.dataviews-view-table-header {
+					display: none;
+				}
+				button {
+					opacity: 0;
+				}
+			}
 		}
-		.dataviews-view-table tr td:last-child,
-		.dataviews-view-table tr th:last-child {
-			padding-right: 8px;
+		tr.is-hovered,
+		tr:focus-within,
+		tr:hover {
+			.dataviews-view-table__actions-column {
+				> div {
+					box-shadow:
+						0 0 0 1px wp-colors.$gray-300,
+						0 2px 3px rgba(0, 0, 0, 0.05),
+						0 4px 5px rgba(0, 0, 0, 0.04),
+						0 12px 12px rgba(0, 0, 0, 0.03),
+						0 16px 16px rgba(0, 0, 0, 0.02);
+					background: #fff;
+					border-radius: 4px;
+				}
+				button {
+					opacity: 1;
+				}
+			}
 		}
 	}
 	&__loading {
@@ -517,6 +552,7 @@ body.toplevel_page_newspack-story-budget {
 // Fix Tabbed Navigation
 .newspack-tabbed-navigation {
 	z-index: 10;
+	position: static;
 	li a {
 		box-sizing: border-box;
 	}

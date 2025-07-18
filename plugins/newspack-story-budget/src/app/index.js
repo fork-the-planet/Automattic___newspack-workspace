@@ -69,6 +69,7 @@ const ModalPage = ( {
 			size={ size }
 			className={ `newspack-story-budget__modal-page ${ className }` }
 			{ ...props }
+			shouldCloseOnClickOutside={ false }
 		>
 			{ children }
 		</Modal>

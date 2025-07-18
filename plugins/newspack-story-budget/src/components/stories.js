@@ -143,6 +143,7 @@ export default () => {
 				isDismissible={ false }
 				size="small"
 				title={ __( 'Something went wrong', 'newspack-story-budget' ) }
+				shouldCloseOnClickOutside={ false }
 			>
 				<VStack spacing={ 4 }>
 					<Notice
