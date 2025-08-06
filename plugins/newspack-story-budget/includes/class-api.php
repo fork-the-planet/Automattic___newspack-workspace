@@ -500,11 +500,9 @@ class API {
 		}
 
 		$post_data = array(
-			'post_title'    => $title,
-			'post_status'   => 'draft',
-			'post_type'     => 'post',
-			'post_date'     => current_time( 'mysql' ),
-			'post_date_gmt' => current_time( 'mysql', true ),
+			'post_title'  => $title,
+			'post_status' => 'draft',
+			'post_type'   => 'post',
 		);
 
 		$post_id = wp_insert_post( $post_data );
