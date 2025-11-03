@@ -14,7 +14,7 @@ import {
 	Notice,
 	Icon,
 } from '@wordpress/components';
-import { warning } from '@wordpress/icons';
+import { caution } from '@wordpress/icons';
 
 import StoryFieldControl from './story-field-control';
 import { NAMESPACE as storeNamespace } from '../store/constants';
@@ -245,7 +245,7 @@ export default ( { items, closeModal, onActionPerformed } ) => {
 											editedStory[ field ]
 										) || (
 											<Text className="newspack-story-budget__field__empty-value">
-												<Icon icon={ warning } size={ 20 } />
+												<Icon icon={ caution } size={ 20 } />
 												{ __( 'Will be empty', 'newspack-story-budget' ) }
 											</Text>
 										) }

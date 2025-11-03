@@ -5,7 +5,7 @@ import { __ } from '@wordpress/i18n';
 import { useMemo } from '@wordpress/element';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { Icon } from '@wordpress/components';
-import { seen, update, edit, external } from '@wordpress/icons';
+import { seen, update, pencil, external } from '@wordpress/icons';
 import { applyFilters } from '@wordpress/hooks';
 
 /**
@@ -142,7 +142,7 @@ export const useStoryActions = () => {
 					label: __( 'Edit Fields', 'newspack-story-budget' ),
 					isPrimary: true,
 					supportsBulk: true,
-					icon: <Icon icon={ edit } />,
+					icon: <Icon icon={ pencil } />,
 					hideModalHeader: true,
 					RenderModal: StoriesEdit,
 				},

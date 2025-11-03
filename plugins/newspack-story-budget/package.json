@@ -6,31 +6,12 @@
 		"url": "https://github.com/Automattic/newspack-story-budget/issues"
 	},
 	"homepage": "https://newspack.com",
-	"devDependencies": {
-		"@rushstack/eslint-patch": "^1.14.1",
-		"@types/react": "^18.3.26",
-		"@wordpress/browserslist-config": "^6.34.0",
-		"eslint": "^8.57.0",
-		"lint-staged": "^16.2.6",
-		"newspack-components": "^3.1.0",
-		"newspack-scripts": "^5.6.1",
-		"postcss-scss": "^4.0.9"
-	},
-	"browserslist": [
-		"extends @wordpress/browserslist-config"
-	],
-	"lint-staged": {
-		"*.scss": "npm run lint:scss:staged",
-		"*.(js|jsx)": "npm run lint:js:staged",
-		"*.(ts|tsx)": "npm run typescript:check",
-		"*.php": "npm run lint:php:staged"
-	},
 	"scripts": {
 		"cm": "newspack-scripts commit",
 		"semantic-release": "newspack-scripts release --files=newspack.php",
 		"clean": "rm -rf dist",
 		"build": "npm run clean && newspack-scripts wp-scripts build",
-		"start": "npm ci --legacy-peer-deps && npm run watch",
+		"start": "npm ci && npm run watch",
 		"watch": "npm run clean && newspack-scripts wp-scripts start",
 		"test": "newspack-scripts test",
 		"lint": "npm run lint:scss && npm run lint:js",
@@ -47,5 +28,17 @@
 		"typescript:check": "newspack-scripts typescript-check",
 		"release": "npm run build && npm run semantic-release",
 		"release:archive": "rm -rf release && mkdir -p release && rsync -r . ./release/newspack-story-budget --exclude-from='./.distignore' && cd release && zip -r newspack-story-budget.zip newspack-story-budget"
+	},
+	"browserslist": [
+		"extends @wordpress/browserslist-config"
+	],
+	"lint-staged": {
+		"*.{js,jsx,ts,tsx}": "npm run lint:js:staged",
+		"*.scss": "npm run lint:scss:staged",
+		"*.php": "npm run lint:php:staged"
+	},
+	"devDependencies": {
+		"newspack-components": "^4.2.0",
+		"newspack-scripts": "^5.8.0"
 	}
 }

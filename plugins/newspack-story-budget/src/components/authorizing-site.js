@@ -9,7 +9,7 @@ import clsx from 'clsx';
  */
 import { __ } from '@wordpress/i18n';
 import { Spinner, __experimentalHStack as HStack } from '@wordpress/components';
-import { Icon, check, warning } from '@wordpress/icons';
+import { Icon, check, caution } from '@wordpress/icons';
 
 /**
  * Internal dependencies.
@@ -35,7 +35,7 @@ export default function AuthorizingSite() {
 		<div className="wrap">
 			<div className="newspack-story-budget__loading">
 				<span className="newspack-story-budget__loading-icon">
-					<Icon icon={ success ? check : warning } />
+					<Icon icon={ success ? check : caution } />
 				</span>
 				<h3
 					className={ clsx( 'newspack-story-budget__authorizing', {
