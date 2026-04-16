@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/repos.sh"
 
 # Sanitize env name for use as a database name (replace dashes with underscores).
 db_name_for_env() {
@@ -79,7 +80,14 @@ case $1 in
                         echo "Creating worktree $wt_repo/$wt_branch..."
                         "$NABSPATH/bin/worktree.sh" add "$wt_repo" "$wt_branch" || exit 1
                     fi
-                    worktree_volumes="$worktree_volumes      - $worktree_dir:/newspack-plugins/$wt_repo
+                    # Resolve container mount point based on project type.
+                    wt_host_path=$(get_repo_host_path "$wt_repo")
+                    if [[ "$wt_host_path" == themes/* ]]; then
+                        wt_container_path="/newspack-themes/$wt_repo"
+                    else
+                        wt_container_path="/newspack-plugins/$wt_repo"
+                    fi
+                    worktree_volumes="$worktree_volumes      - $worktree_dir:$wt_container_path
 "
                     shift 2
                     ;;
@@ -286,10 +294,14 @@ YAML
         echo "Environment '$env_name' is ready at https://${domain}/"
         # Copy built assets from main repos into worktrees.
         if [[ "$auto_build" == true ]]; then
-            grep 'worktrees/' "$compose_file" | sed 's|.*/newspack-plugins/||' | while read -r repo; do
-                src="$NABSPATH/repos/$repo"
-                # Extract worktree path from the compose volume line.
-                wt_path=$(grep "newspack-repos/$repo" "$compose_file" | sed 's/^ *- //' | cut -d: -f1)
+            grep 'worktrees/' "$compose_file" | while read -r line; do
+                # Parse volume line: "- ./worktrees/repo/branch:/newspack-{plugins,themes}/repo"
+                wt_path=$(echo "$line" | sed 's/^ *- //' | cut -d: -f1)
+                container_path=$(echo "$line" | cut -d: -f2)
+                repo=$(basename "$container_path")
+                # Resolve the source from the monorepo layout.
+                repo_host_path=$(get_repo_host_path "$repo")
+                src="$NABSPATH/$repo_host_path"
                 dst="$NABSPATH/${wt_path#./}"
                 echo "Copying built assets for $repo..."
                 for dir in node_modules vendor dist build; do
