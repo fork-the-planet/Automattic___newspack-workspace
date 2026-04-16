@@ -122,8 +122,8 @@ jobs:
   # ----------------------------------------------------------------------------
   # PHP lint and PHPUnit — one job per affected package that has PHP.
   # ----------------------------------------------------------------------------
-  php:
-    name: PHP / ${{ matrix.package }}
+  php-lint:
+    name: PHPCS / ${{ matrix.package }}
     needs: changed-packages
     if: needs.changed-packages.outputs.any == 'true' && needs.changed-packages.outputs.php-matrix != '{"include":[]}'
     runs-on: ubuntu-latest
@@ -141,21 +141,116 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
       - name: phpcs
         run: composer phpcs -- $(pnpm --silent --filter "${{ matrix.package }}" exec pwd)
-      - name: phpunit
+
+  php-test:
+    name: PHPUnit / ${{ matrix.package }}
+    needs: changed-packages
+    if: needs.changed-packages.outputs.any == 'true' && needs.changed-packages.outputs.php-matrix != '{"include":[]}'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.changed-packages.outputs.php-matrix) }}
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      WP_TESTS_DIR: /tmp/wordpress-tests-lib
+      WP_CORE_DIR: /tmp/wordpress
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+          extensions: mysqli
+          coverage: none
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Resolve package directory
+        id: pkg
         run: |
           dir=$(pnpm --silent --filter "${{ matrix.package }}" exec pwd)
-          if [ -f "$dir/phpunit.xml" ]; then
-            ./vendor/bin/phpunit -c "$dir/phpunit.xml"
-          elif [ -f "$dir/phpunit.xml.dist" ]; then
-            ./vendor/bin/phpunit -c "$dir/phpunit.xml.dist"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+          name=$(basename "$dir")
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+      - name: Check for phpunit config
+        id: check
+        run: |
+          dir="${{ steps.pkg.outputs.dir }}"
+          if [ -f "$dir/phpunit.xml" ] || [ -f "$dir/phpunit.xml.dist" ]; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Install WordPress test suite
+        if: steps.check.outputs.has_tests == 'true'
+        run: |
+          # Download WP core and test library.
+          mkdir -p "$WP_CORE_DIR" "$WP_TESTS_DIR"
+          WP_VERSION=latest
+          WP_TESTS_TAG=$(curl -s "https://api.wordpress.org/core/version-check/1.7/" | jq -r '.offers[0].version')
+
+          curl -s "https://wordpress.org/wordpress-$WP_TESTS_TAG.tar.gz" | tar xz -C /tmp
+          mv /tmp/wordpress/* "$WP_CORE_DIR/"
+
+          svn co --quiet "https://develop.svn.wordpress.org/tags/$WP_TESTS_TAG/tests/phpunit/includes/" "$WP_TESTS_DIR/includes"
+          svn co --quiet "https://develop.svn.wordpress.org/tags/$WP_TESTS_TAG/tests/phpunit/data/" "$WP_TESTS_DIR/data"
+
+          # Write wp-tests-config.php.
+          cat > "$WP_TESTS_DIR/wp-tests-config.php" << 'WPCFG'
+          <?php
+          define( 'ABSPATH', '/tmp/wordpress/' );
+          define( 'DB_NAME', 'wordpress_test' );
+          define( 'DB_USER', 'root' );
+          define( 'DB_PASSWORD', 'root' );
+          define( 'DB_HOST', '127.0.0.1' );
+          define( 'DB_CHARSET', 'utf8' );
+          define( 'DB_COLLATE', '' );
+          $table_prefix = 'wptests_';
+          define( 'WP_TESTS_DOMAIN', 'example.org' );
+          define( 'WP_TESTS_EMAIL', 'admin@example.org' );
+          define( 'WP_TESTS_TITLE', 'Test Blog' );
+          define( 'WP_PHP_BINARY', 'php' );
+          WPCFG
+      - name: composer install (root)
+        if: steps.check.outputs.has_tests == 'true'
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: composer install (package)
+        if: steps.check.outputs.has_tests == 'true'
+        run: |
+          dir="${{ steps.pkg.outputs.dir }}"
+          if [ -f "$dir/composer.json" ]; then
+            cd "$dir" && composer install --no-interaction --no-progress --prefer-dist
+          fi
+      - name: PHPUnit
+        if: steps.check.outputs.has_tests == 'true'
+        run: |
+          dir="${{ steps.pkg.outputs.dir }}"
+          config=""
+          [ -f "$dir/phpunit.xml" ] && config="$dir/phpunit.xml"
+          [ -f "$dir/phpunit.xml.dist" ] && config="$dir/phpunit.xml.dist"
+          ./vendor/bin/phpunit -c "$config"
 
   # ----------------------------------------------------------------------------
   # Summary gate: fail the workflow if any needed job failed.
   # ----------------------------------------------------------------------------
   ci-ok:
     name: CI OK
-    needs: [js, php]
+    needs: [js, php-lint, php-test]
     if: always()
     runs-on: ubuntu-latest
     steps:

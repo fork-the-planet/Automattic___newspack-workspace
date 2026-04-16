@@ -1,0 +1,1 @@
+export var HANDOFF_KEY = 'newspack_wizard_handoff_message';

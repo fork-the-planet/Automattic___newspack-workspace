@@ -79,7 +79,7 @@ case $1 in
                         echo "Creating worktree $wt_repo/$wt_branch..."
                         "$NABSPATH/bin/worktree.sh" add "$wt_repo" "$wt_branch" || exit 1
                     fi
-                    worktree_volumes="$worktree_volumes      - $worktree_dir:/newspack-repos/$wt_repo
+                    worktree_volumes="$worktree_volumes      - $worktree_dir:/newspack-plugins/$wt_repo
 "
                     shift 2
                     ;;
@@ -123,7 +123,8 @@ services:
       - ./logs/env-${env_name}/apache2:/var/log/apache2
       - ./logs/env-${env_name}/php:/var/log/php
       - ./bin:/var/scripts
-      - ./repos:/newspack-repos
+      - ./plugins:/newspack-plugins
+      - ./themes:/newspack-themes
 ${worktree_volumes}      - ./envs/${env_name}/html:/var/www/html
       - ./manager-html:/var/www/manager-html
       - ./additional-sites-html:/var/www/additional-sites-html
@@ -285,7 +286,7 @@ YAML
         echo "Environment '$env_name' is ready at https://${domain}/"
         # Copy built assets from main repos into worktrees.
         if [[ "$auto_build" == true ]]; then
-            grep 'worktrees/' "$compose_file" | sed 's|.*/newspack-repos/||' | while read -r repo; do
+            grep 'worktrees/' "$compose_file" | sed 's|.*/newspack-plugins/||' | while read -r repo; do
                 src="$NABSPATH/repos/$repo"
                 # Extract worktree path from the compose volume line.
                 wt_path=$(grep "newspack-repos/$repo" "$compose_file" | sed 's/^ *- //' | cut -d: -f1)
@@ -328,7 +329,7 @@ YAML
             domain=$(domain_for_env "$compose_file")
             ip=$(ip_for_env "$compose_file")
             while IFS= read -r line; do
-                # Extract repo and branch from worktree volume lines like: ./worktrees/repo/branch:/newspack-repos/repo
+                # Extract repo and branch from worktree volume lines like: ./worktrees/repo/branch:/newspack-plugins/repo
                 wt=$(echo "$line" | grep -o 'worktrees/[^:]*' | sed 's|worktrees/||')
                 [[ -n "$wt" ]] && worktree_entries+=("$wt")
             done < <(grep 'worktrees/' "$compose_file")
