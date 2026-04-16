@@ -48,5 +48,10 @@
 		"*.{js,jsx,ts,tsx}": "eslint --fix",
 		"*.{css,scss}": "stylelint --fix",
 		"*.php": "composer phpcbf --"
+	},
+	"pnpm": {
+		"overrides": {
+			"@typescript-eslint/parser": "8.58.2"
+		}
 	}
 }
