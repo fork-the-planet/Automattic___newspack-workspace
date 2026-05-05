@@ -220,6 +220,40 @@ apply_structural_overrides() {
   done < <(git diff --name-only --diff-filter=U)
 }
 
+# Rewrite repository field in every workspace package.json so semantic-release
+# resolves to the monorepo. Without this, multi-semantic-release ls-remotes
+# the legacy standalone repo of each plugin (which has no alpha/release
+# branches) and aborts. Idempotent — safe to call after every merge.
+normalize_package_repos() {
+  node -e '
+    const fs = require("fs"), path = require("path");
+    const url = "git+https://github.com/Automattic/newspack-workspace.git";
+    const roots = ["plugins", "themes", "packages"];
+    const changed = [];
+    for (const r of roots) {
+      if (!fs.existsSync(r)) continue;
+      for (const name of fs.readdirSync(r)) {
+        const dir = path.join(r, name);
+        const pj = path.join(dir, "package.json");
+        if (!fs.existsSync(pj)) continue;
+        const src = fs.readFileSync(pj, "utf8");
+        const indentMatch = src.match(/\n(\t+|[ ]+)"/);
+        const indent = indentMatch ? indentMatch[1] : "  ";
+        const trail = src.endsWith("\n") ? "\n" : "";
+        const j = JSON.parse(src);
+        const want = { type: "git", url, directory: dir };
+        if (JSON.stringify(j.repository) === JSON.stringify(want)) continue;
+        j.repository = want;
+        fs.writeFileSync(pj, JSON.stringify(j, null, indent) + trail);
+        changed.push(pj);
+      }
+    }
+    process.stdout.write(changed.join("\0"));
+  ' | while IFS= read -r -d "" f; do
+    git add -- "$f"
+  done
+}
+
 # For newspack-plugin: redirect any path under
 # plugins/newspack-plugin/packages/{colors,components,icons}/ to the workspace
 # path packages/<pkg>/<rest>. Handles three cases:
@@ -372,6 +406,8 @@ integrate_all() {
         continue
       fi
     fi
+
+    normalize_package_repos
 
     if [ -z "$(git diff --name-only --diff-filter=U)" ]; then
       git commit --no-edit > /dev/null
