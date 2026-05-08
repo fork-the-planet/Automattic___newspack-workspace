@@ -6,10 +6,9 @@
 # from .claude/settings.json and:
 #
 #   1. Registers each declared marketplace.
-#   2. Removes any project scope copy of each plugin so older versions
-#      pinned to this workspace stop shadowing the user scope ones.
-#   3. Installs each plugin at user scope so it loads in every Claude
+#   2. Installs each plugin at user scope so it loads in every Claude
 #      Code session, not just inside this workspace.
+#   3. Removes any leftover project scope plugin record.
 #
 # Safe to re-run: existing installs are skipped; new entries in
 # .claude/settings.json are picked up on the next run.
