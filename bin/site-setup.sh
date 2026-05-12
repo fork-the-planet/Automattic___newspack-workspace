@@ -241,6 +241,17 @@ log_info "Enabling Reader Activation..."
 $WP option update newspack_reader_activation_enabled 1
 log_success "Reader Activation enabled"
 
+# Import secrets (API keys, options, constants) from secrets.json, if present.
+if [ -f /var/scripts/secrets.json ]; then
+    log_info "Importing secrets from secrets.json..."
+    /var/scripts/import-secrets.sh "$WP_PATH" || {
+        log_warning "Failed to import secrets"
+    }
+    log_success "Secrets imported"
+else
+    log_info "No secrets.json found, skipping secrets import"
+fi
+
 # Remove default Sample Page
 log_info "Removing default Sample Page..."
 $WP post delete $($WP post list --post_type=page --name=sample-page --field=ID --format=ids 2>/dev/null) --force 2>/dev/null || true
