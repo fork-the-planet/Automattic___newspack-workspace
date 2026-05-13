@@ -214,6 +214,10 @@ jobs:
       - name: Install WordPress test suite
         if: steps.check.outputs.has_tests == 'true'
         run: |
+          # svn isn't on ubuntu-latest runners by default; the WP develop
+          # repo's phpunit test library is published over svn.
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq subversion
           # Download WP core and test library.
           mkdir -p "$WP_TESTS_DIR"
           WP_TESTS_TAG=$(curl -s "https://api.wordpress.org/core/version-check/1.7/" | jq -r '.offers[0].version')
