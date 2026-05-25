@@ -1,5 +1,4 @@
 module.exports = {
-	tagFormat: 'newspack-theme-v${version}',
 	branches: [
 		'release',
 		{ name: 'alpha', prerelease: 'alpha' },

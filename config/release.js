@@ -5,7 +5,7 @@
  * (branches, plugin chain, prepare steps) is identical across the monorepo.
  *
  * @param {Object}  opts
- * @param {string}  opts.name        Package directory name, used for tagFormat and zip asset.
+ * @param {string}  opts.name        Package directory name, used for the zip asset path and label. Git tags are namespaced by multi-semantic-release as `<pkgName>@<version>` (it overrides any tagFormat), so this name does not affect tagging.
  * @param {string}  opts.phpFile     Main PHP file to bump the version in.
  * @param {boolean} [opts.npmPublish=false] Whether to publish to npm.
  */
@@ -17,7 +17,6 @@ module.exports = function releaseConfig( { name, phpFile, npmPublish = false } )
 			{ name: 'hotfix/*', prerelease: '${name.replace(/\\//g, "-")}' },
 			{ name: 'epic/*', prerelease: '${name.replace(/\\//g, "-")}' },
 		],
-		tagFormat: `${ name }-v\${version}`,
 		plugins: [
 			'@semantic-release/commit-analyzer',
 			'@semantic-release/release-notes-generator',

@@ -78,7 +78,7 @@
 	},
 	"release": {
 		"branches": [
-			"trunk",
+			"release",
 			{
 				"name": "alpha",
 				"prerelease": true

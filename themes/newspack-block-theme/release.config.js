@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 module.exports = {
-	tagFormat: 'newspack-block-theme-v${version}',
 	branches: [
 		'release',
 		{
