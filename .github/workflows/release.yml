@@ -38,6 +38,10 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
       - name: Configure git
         run: |
           git config user.name "newspack-release-bot"
@@ -48,6 +52,17 @@ jobs:
         run: pnpm run build:packages
       - name: Build all
         run: pnpm run build
+      # Install each plugin's production PHP dependencies so release:archive
+      # bundles vendor/ into the release zips. Without this the published zips
+      # are missing composer dependencies (e.g. newspack-ads' googleads lib).
+      - name: Install plugin PHP dependencies
+        run: |
+          for dir in plugins/*/; do
+            if [ -f "${dir}composer.json" ]; then
+              echo "==> composer install in ${dir}"
+              composer install --no-dev --no-interaction --no-scripts --working-dir="${dir}"
+            fi
+          done
       - name: Release
         run: pnpm exec multi-semantic-release --sequential-init
         env:
