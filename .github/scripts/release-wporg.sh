@@ -56,8 +56,10 @@ rm -rf trunk
 cp -r "../$WP_ORG_PLUGIN_NAME" ./trunk
 cp -r ./trunk "./tags/$SVN_TAG"
 
-# Stage adds and deletes.
-svn stat | grep '^?' | awk '{print $2}' | xargs -r -I x svn add x@
-svn stat | grep '^!' | awk '{print $2}' | xargs -r -I x svn rm --force x@
+# Stage adds and deletes. The greps are guarded with `|| true` because a clean
+# state (e.g. a first deploy with no deletions) makes grep exit non-zero, which
+# under `set -o pipefail` would abort the script before `svn ci`.
+svn stat | { grep '^?' || true; } | awk '{print $2}' | xargs -r -I x svn add x@
+svn stat | { grep '^!' || true; } | awk '{print $2}' | xargs -r -I x svn rm --force x@
 
 svn ci --no-auth-cache --username "$WP_ORG_USERNAME" --password "$WP_ORG_PASSWORD" -m "Deploy version $SVN_TAG"
