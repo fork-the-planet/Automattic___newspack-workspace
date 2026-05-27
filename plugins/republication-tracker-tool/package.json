@@ -16,7 +16,8 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/Automattic/republication-tracker-tool.git"
+		"url": "git+https://github.com/Automattic/newspack-workspace.git",
+		"directory": "plugins/republication-tracker-tool"
 	},
 	"license": "GPL-2.0-or-later",
 	"bugs": {
@@ -26,6 +27,6 @@
 		"grunt": "~1.6.1",
 		"grunt-wp-i18n": "~1.0.3",
 		"grunt-wp-readme-to-markdown": "~2.1.0",
-		"newspack-scripts": "^5.9.5"
+		"newspack-scripts": "workspace:*"
 	}
 }
