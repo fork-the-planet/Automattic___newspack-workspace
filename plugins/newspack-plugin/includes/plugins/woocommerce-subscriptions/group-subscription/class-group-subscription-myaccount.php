@@ -157,8 +157,8 @@ class Group_Subscription_MyAccount {
 			exit;
 		}
 		if ( 1 === count( $managed ) ) {
-			wp_safe_redirect( self::get_group_url( $managed[0] ) );
-			exit;
+			self::render_group_page( $managed[0] );
+			return;
 		}
 		self::render_group_picker( $managed );
 	}

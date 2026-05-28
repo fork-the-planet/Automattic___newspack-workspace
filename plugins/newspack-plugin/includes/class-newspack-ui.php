@@ -225,6 +225,8 @@ class Newspack_UI {
 				'size'        => 'small',
 				'state'       => 'closed',
 				'form_action' => '',
+				'form_id'     => '',
+				'form_class'  => '',
 			]
 		);
 		?>
