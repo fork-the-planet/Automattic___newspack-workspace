@@ -106,11 +106,11 @@ $is_completely_empty = empty( $members ) && empty( $all_invites );
 				aria-labelledby="newspack-my-account__group_subscription__tab-members"
 				class="newspack-ui__tabs__panel<?php echo 'members' === $active_tab ? ' selected' : ''; ?>"
 			>
-	<?php if ( empty( $members ) ) : ?>
+	<?php if ( empty( $members ) && ! empty( $pending_invites ) ) : ?>
 		<p class="newspack-my-account__group_subscription__panel-info">
 			<?php esc_html_e( 'Your invitations are still pending. Anyone who accepts will appear here.', 'newspack-plugin' ); ?>
 		</p>
-	<?php else : ?>
+	<?php endif; ?>
 	<table class="shop_table shop_table_responsive newspack-my-account__group_subscription__members">
 		<thead>
 			<tr>
@@ -168,7 +168,6 @@ $is_completely_empty = empty( $members ) && empty( $all_invites );
 		<?php endforeach; ?>
 		</tbody>
 	</table>
-	<?php endif; ?>
 			</div><!-- .newspack-ui__tabs__panel (members) -->
 			<div class="newspack-ui__tabs__panel<?php echo 'invites' === $active_tab ? ' selected' : ''; ?>">
 	<?php if ( empty( $all_invites ) ) : ?>
@@ -192,7 +191,6 @@ $is_completely_empty = empty( $members ) && empty( $all_invites );
 				<td data-title="<?php esc_attr_e( 'Sent to', 'newspack-plugin' ); ?>"><a href="mailto:<?php echo esc_attr( sanitize_email( $invite['email'] ) ); ?>"><?php echo esc_html( sanitize_email( $invite['email'] ) ); ?></a></td>
 				<td data-title="<?php esc_attr_e( 'Status', 'newspack-plugin' ); ?>"><?php echo esc_html( Group_Subscription_Invite::is_invite_expired( $invite ) ? __( 'Expired', 'newspack-plugin' ) : __( 'Pending', 'newspack-plugin' ) ); ?></td>
 				<td class="newspack-my-account__group_subscription__invites--actions order-actions">
-					<?php if ( $is_manageable ) : ?>
 					<div class="newspack-ui__dropdown">
 						<button class="newspack-ui__button newspack-ui__button--ghost newspack-ui__button--small newspack-ui__dropdown__toggle newspack-ui__button--icon">
 							<?php Newspack_UI_Icons::print_svg( 'more' ); ?>
@@ -200,6 +198,7 @@ $is_completely_empty = empty( $members ) && empty( $all_invites );
 						</button>
 						<div class="newspack-ui__dropdown__content">
 							<ul>
+								<?php if ( $is_manageable ) : ?>
 								<li>
 									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 										<input type="hidden" name="action" value="newspack_group_subscription_invite">
@@ -209,6 +208,7 @@ $is_completely_empty = empty( $members ) && empty( $all_invites );
 										<button type="submit" class="newspack-ui__button newspack-ui__button--ghost"><?php \esc_html_e( 'Resend invite', 'newspack-plugin' ); ?></button>
 									</form>
 								</li>
+								<?php endif; ?>
 								<li>
 									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 										<input type="hidden" name="action" value="newspack_group_subscription_cancel_invite">
@@ -221,7 +221,6 @@ $is_completely_empty = empty( $members ) && empty( $all_invites );
 							</ul>
 						</div>
 					</div>
-					<?php endif; // $is_manageable ?>
 				</td>
 			</tr>
 		<?php endforeach; ?>

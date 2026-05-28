@@ -59,7 +59,8 @@
 			vertical-align: middle;
 
 			// Establish a 48px minimum cell height (spacer-7 inner + 6px×2 padding) that still grows with content.
-			&::before {
+			// Uses ::after so it doesn't clobber WooCommerce's responsive `td::before { content: attr(data-title) }` mobile labels.
+			&::after {
 				content: "";
 				display: inline-block;
 				height: var(--newspack-ui-spacer-7);
