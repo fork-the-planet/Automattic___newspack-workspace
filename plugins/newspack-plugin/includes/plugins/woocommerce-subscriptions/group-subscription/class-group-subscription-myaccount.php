@@ -416,6 +416,19 @@ class Group_Subscription_MyAccount {
 	}
 
 	/**
+	 * Whether the Newspack v1 My Account UI is active.
+	 *
+	 * The member-facing protections that hide the owner's billing details live only
+	 * in the v1 templates. On the legacy/core WooCommerce UI those protections are
+	 * absent, so member subscription access must not be granted there.
+	 *
+	 * @return bool
+	 */
+	private static function is_v1_my_account_active(): bool {
+		return version_compare( WooCommerce_My_Account::get_version(), '1.0.0', '>=' );
+	}
+
+	/**
 	 * Inject group subscriptions the current user is a member of into the subscriptions list.
 	 *
 	 * Only runs on My Account pages to avoid side effects (e.g. trial limit checks)
@@ -428,6 +441,11 @@ class Group_Subscription_MyAccount {
 	 */
 	public static function inject_member_group_subscriptions( $subscriptions, $user_id ) {
 		if ( ! function_exists( 'is_account_page' ) || ! \is_account_page() ) {
+			return $subscriptions;
+		}
+		// The legacy/core My Account UI has no member-safe templates, so don't surface
+		// the owner's subscription (and its billing details) there.
+		if ( ! self::is_v1_my_account_active() ) {
 			return $subscriptions;
 		}
 		// Don't add Group Subscription features to My Account when Woo Memberships
@@ -470,6 +488,11 @@ class Group_Subscription_MyAccount {
 	 */
 	public static function grant_group_member_view_order_cap( $caps, $cap, $user_id, $args ) {
 		if ( 'view_order' !== $cap || ! function_exists( 'is_account_page' ) || ! \is_account_page() ) {
+			return $caps;
+		}
+		// Without the v1 member-safe subscription view, granting access would expose
+		// the owner's billing details via the stock WooCommerce template.
+		if ( ! self::is_v1_my_account_active() ) {
 			return $caps;
 		}
 		$order_id     = isset( $args[0] ) ? absint( $args[0] ) : 0;
