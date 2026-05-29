@@ -32,6 +32,7 @@ class Test_Group_Management_Nav extends \WP_UnitTestCase {
 	public function tear_down() {
 		global $subscriptions_database;
 		$subscriptions_database = [];
+		remove_filter( 'woocommerce_account_menu_items', [ \Newspack\My_Account_UI_V1::class, 'my_account_menu_items' ], 1001 );
 		delete_option( 'newspack_group_subscription_label_singular' );
 		delete_option( 'newspack_group_subscription_label_plural' );
 		parent::tear_down();

@@ -46,7 +46,8 @@ function newspack_string_to_bool( $string ) {
  * Walks an ordered list of strategies and returns the first non-empty result.
  * Strategies: 'display_name', 'first_name', 'last_name', 'full_name', 'email', 'login'.
  *
- * Default cascade: display_name → full_name → email.
+ * Default cascade: display_name → full_name → login. Email is never used by
+ * default to avoid leaking addresses; pass an explicit cascade to include it.
  * For just the display name, pass `[ 'display_name' ]`.
  * For first name only, pass `[ 'first_name' ]`.
  *
@@ -54,7 +55,7 @@ function newspack_string_to_bool( $string ) {
  * @param string[]          $cascade Ordered strategies to try.
  * @return string
  */
-function newspack_get_user_display_label( $user, $cascade = [ 'display_name', 'full_name', 'email' ] ) {
+function newspack_get_user_display_label( $user, $cascade = [ 'display_name', 'full_name', 'login' ] ) {
 	if ( is_numeric( $user ) ) {
 		$user = \get_userdata( (int) $user );
 	}

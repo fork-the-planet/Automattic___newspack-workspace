@@ -480,6 +480,7 @@ class Test_Group_Subscription_MyAccount extends WP_UnitTestCase {
 	 * @param string $nonce_action    Nonce action; defaults to the correct constant.
 	 *
 	 * @return string Captured redirect URL.
+	 * @throws \Exception Re-throws any exception other than the deliberate redirect interception.
 	 */
 	private function invoke_leave_group_handler( int $subscription_id, string $nonce_action = Group_Subscription_MyAccount::LEAVE_GROUP_NONCE_ACTION ): string {
 		$original_request_method = $_SERVER['REQUEST_METHOD'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -503,7 +504,10 @@ class Test_Group_Subscription_MyAccount extends WP_UnitTestCase {
 		try {
 			Group_Subscription_MyAccount::handle_leave_group();
 		} catch ( \Exception $e ) {
-			unset( $e ); // expected redirect_intercepted exception.
+			// Only the deliberate redirect interception is expected; surface anything else.
+			if ( 'redirect_intercepted' !== $e->getMessage() ) {
+				throw $e;
+			}
 		} finally {
 			remove_filter( 'wp_redirect', $capture, 1 );
 			remove_filter( 'allowed_redirect_hosts', $allow_host );

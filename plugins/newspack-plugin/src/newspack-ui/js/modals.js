@@ -110,8 +110,8 @@ domReady( function () {
 							'X-WP-Nonce': fetchData.nonce,
 						},
 					} )
-						.then( response => {
-							const json = response.json();
+						.then( async response => {
+							const json = await response.json();
 							if ( ! response.ok || json.error ) {
 								throw new Error( json.message || json.error || 'An error occurred. Please try again.' );
 							}

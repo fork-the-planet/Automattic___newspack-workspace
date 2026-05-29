@@ -40,7 +40,7 @@ export const setupTabController = ( element, classnames ) => {
 	}
 
 	const header = element.querySelector( `.${ classnames.list }` );
-	const select = element.querySelector( ':scope > select' );
+	const select = element.querySelector( ':scope > select, :scope > .newspack-ui__segmented-control__form-control > select' );
 	if ( ! header && ! select && tab_contents.length ) {
 		tab_contents[ 0 ].classList.add( 'selected' );
 		return;
