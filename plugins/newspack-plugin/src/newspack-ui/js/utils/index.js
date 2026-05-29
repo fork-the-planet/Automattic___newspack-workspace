@@ -113,9 +113,9 @@ export const setupTabController = ( element, classnames ) => {
 
 		if ( tab.tagName === 'SELECT' ) {
 			tab.classList.add( 'selected' );
-			select_content( parseInt( tab.value ) );
+			select_content( parseInt( tab.value, 10 ) );
 			tab.addEventListener( 'change', function ( ev ) {
-				select_content( parseInt( ev.target.value ) );
+				select_content( parseInt( ev.target.value, 10 ) );
 			} );
 			return;
 		}

@@ -485,7 +485,14 @@ class Group_Subscription_Invite {
 	public static function accept_invite( $subscription, $key, $email ) {
 		$subscription_obj = WooCommerce_Subscriptions::sanitize_subscription( $subscription );
 		if ( ! $subscription_obj || ! $subscription_obj->has_status( WooCommerce_Connection::ACTIVE_SUBSCRIPTION_STATUSES ) ) {
-			return new \WP_Error( 'newspack_group_subscription_invite_inactive', __( 'This group subscription is no longer active.', 'newspack-plugin' ) );
+			return new \WP_Error(
+				'newspack_group_subscription_invite_inactive',
+				sprintf(
+					/* translators: %s: lowercase singular group label (e.g. "group", "team"). */
+					__( 'This %s is no longer active.', 'newspack-plugin' ),
+					Group_Subscription::get_label_lower( 'singular' )
+				)
+			);
 		}
 		$invite = self::get_invite_by_key( $subscription, $key );
 		if ( ! $invite || $invite['email'] !== $email ) {

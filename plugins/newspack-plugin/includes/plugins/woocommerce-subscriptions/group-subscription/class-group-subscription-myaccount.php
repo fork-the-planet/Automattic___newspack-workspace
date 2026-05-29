@@ -521,11 +521,16 @@ class Group_Subscription_MyAccount {
 			: home_url();
 
 		if ( ! $user_id || ! Group_Subscription::user_is_member( $user_id, $subscription_id ) ) {
+			$not_member_message = sprintf(
+				/* translators: %s: lowercase singular group label (e.g. "group", "team"). */
+				__( 'You are not a member of this %s.', 'newspack-plugin' ),
+				Group_Subscription::get_label_lower( 'singular' )
+			);
 			self::redirect(
-				new \WP_Error( 'newspack_group_subscription_not_a_member', __( 'You are not a member of this group subscription.', 'newspack-plugin' ) ),
+				new \WP_Error( 'newspack_group_subscription_not_a_member', $not_member_message ),
 				$dashboard_url,
 				'',
-				__( 'You are not a member of this group subscription.', 'newspack-plugin' )
+				$not_member_message
 			);
 		}
 
@@ -535,7 +540,11 @@ class Group_Subscription_MyAccount {
 			$result,
 			$dashboard_url,
 			'',
-			__( 'You have left the group subscription.', 'newspack-plugin' )
+			sprintf(
+				/* translators: %s: lowercase singular group label (e.g. "group", "team"). */
+				__( 'You have left the %s.', 'newspack-plugin' ),
+				Group_Subscription::get_label_lower( 'singular' )
+			)
 		);
 	}
 
