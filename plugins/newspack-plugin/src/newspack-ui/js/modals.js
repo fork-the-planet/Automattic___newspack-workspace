@@ -134,9 +134,7 @@ domReady( function () {
 						} )
 						.finally( () => {
 							fetchButton.removeAttribute( 'disabled' );
-							fetchButton.classList.remove( 'newspack-ui--loading' );
 							fetchButton.classList.remove( 'newspack-ui__button--loading' );
-							fetchButton.closest( 'form, div' )?.classList.remove( 'newspack-ui--loading' );
 						} );
 				}
 			} );
