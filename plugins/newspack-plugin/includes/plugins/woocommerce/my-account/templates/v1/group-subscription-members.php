@@ -124,8 +124,11 @@ $is_completely_empty = empty( $members ) && empty( $all_invites );
 		<tbody>
 		<?php
 		foreach ( $managers_and_members as $user_id ) :
+			$user = get_user_by( 'id', $user_id );
+			if ( ! $user ) {
+				continue;
+			}
 			$is_manager  = Group_Subscription::user_is_manager( $user_id, $subscription );
-			$user        = get_user_by( 'id', $user_id );
 			$is_owner    = $user_id === $subscription->get_user_id();
 			$member_role = $is_manager ? __( 'Manager', 'newspack-plugin' ) : __( 'Member', 'newspack-plugin' );
 			if ( $is_owner ) {
