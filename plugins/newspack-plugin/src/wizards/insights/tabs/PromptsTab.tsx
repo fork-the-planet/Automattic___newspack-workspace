@@ -1,7 +1,7 @@
 /**
  * PromptsTab
  *
- * Stub. Real content lands in NPPD-1616.
+ * Stub. Real content lands in NPPD-1607.
  */
 
 /**

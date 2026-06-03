@@ -31,7 +31,7 @@ class Insights_Section_Engagement {
 
 	/**
 	 * Initialize. Hooks REST endpoints for this tab when implementations
-	 * arrive (NPPD-1607).
+	 * arrive (NPPD-1624).
 	 */
 	public static function init() {
 		self::register_hooks();

@@ -1,7 +1,7 @@
 /**
  * GatesTab
  *
- * Stub. Real content lands in NPPD-1609.
+ * Stub. Real content lands in NPPD-1604.
  */
 
 /**

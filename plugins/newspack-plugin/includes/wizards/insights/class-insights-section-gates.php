@@ -32,7 +32,7 @@ class Insights_Section_Gates {
 
 	/**
 	 * Initialize. Hooks REST endpoints for this tab when implementations
-	 * arrive (NPPD-1609).
+	 * arrive (NPPD-1604).
 	 */
 	public static function init() {
 		self::register_hooks();

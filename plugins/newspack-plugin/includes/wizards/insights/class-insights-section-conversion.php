@@ -32,7 +32,7 @@ class Insights_Section_Conversion {
 
 	/**
 	 * Initialize. Hooks REST endpoints for this tab when implementations
-	 * arrive (NPPD-1608).
+	 * arrive (NPPD-1609).
 	 */
 	public static function init() {
 		self::register_hooks();

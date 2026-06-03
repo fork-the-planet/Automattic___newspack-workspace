@@ -33,7 +33,7 @@ class Insights_Section_Prompts {
 
 	/**
 	 * Initialize. Hooks REST endpoints for this tab when implementations
-	 * arrive (NPPD-1616).
+	 * arrive (NPPD-1607).
 	 */
 	public static function init() {
 		self::register_hooks();

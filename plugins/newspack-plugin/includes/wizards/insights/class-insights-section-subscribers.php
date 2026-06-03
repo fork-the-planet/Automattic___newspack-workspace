@@ -32,7 +32,7 @@ class Insights_Section_Subscribers {
 
 	/**
 	 * Initialize. Hooks REST endpoints for this tab when implementations
-	 * arrive (NPPD-1617).
+	 * arrive (NPPD-1616).
 	 */
 	public static function init() {
 		self::register_hooks();

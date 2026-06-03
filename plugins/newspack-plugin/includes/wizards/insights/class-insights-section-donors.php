@@ -32,7 +32,7 @@ class Insights_Section_Donors {
 
 	/**
 	 * Initialize. Hooks REST endpoints for this tab when implementations
-	 * arrive (NPPD-1618).
+	 * arrive (NPPD-1617).
 	 */
 	public static function init() {
 		self::register_hooks();

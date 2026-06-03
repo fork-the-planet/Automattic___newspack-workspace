@@ -1,7 +1,7 @@
 /**
  * AdvertisingTab
  *
- * Stub. Real content lands in NPPD-1624.
+ * Stub. Real content lands in NPPD-1618.
  */
 
 /**

@@ -1,7 +1,7 @@
 /**
  * SubscribersTab
  *
- * Stub. Real content lands in NPPD-1617.
+ * Stub. Real content lands in NPPD-1616.
  */
 
 /**
