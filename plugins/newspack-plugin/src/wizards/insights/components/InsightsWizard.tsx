@@ -54,21 +54,31 @@ const isTabKey = ( v: unknown ): v is TabKey =>
 	typeof v === 'string' && ( TAB_KEYS as readonly string[] ).includes( v );
 
 /**
- * Read initial active tab from URL ?tab=, falling back to the first
- * visible tab. (Not necessarily 'audience' — if audience is hidden
- * for this publisher, the first visible one wins.)
+ * The list of visible tabs derived from the boot config visibility map.
  */
-const readInitialTab = ( visibility: TabVisibility ): TabKey => {
-	const visible = TAB_KEYS.filter( k => visibility[ k as TabKey ] ) as TabKey[];
-	const fallback = visible[ 0 ] ?? 'audience';
+const getVisibleTabs = ( visibility: TabVisibility ): TabKey[] =>
+	TAB_KEYS.filter( k => visibility[ k as TabKey ] ) as TabKey[];
+
+/**
+ * Read initial active tab from URL ?tab=, falling back to the first
+ * visible tab. Returns null if no tabs are visible — caller renders an
+ * empty state in that case rather than forcing an arbitrary tab key.
+ */
+const readInitialTab = (
+	visibility: TabVisibility,
+	visibleTabs: TabKey[]
+): TabKey | null => {
+	if ( visibleTabs.length === 0 ) {
+		return null;
+	}
 	if ( typeof window === 'undefined' ) {
-		return fallback;
+		return visibleTabs[ 0 ];
 	}
 	const fromUrl = new URLSearchParams( window.location.search ).get( 'tab' );
 	if ( isTabKey( fromUrl ) && visibility[ fromUrl ] ) {
 		return fromUrl;
 	}
-	return fallback;
+	return visibleTabs[ 0 ];
 };
 
 const writeTabToUrl = ( tab: TabKey ) => {
@@ -82,8 +92,11 @@ const writeTabToUrl = ( tab: TabKey ) => {
 };
 
 const InsightsWizard = ( { config }: InsightsWizardProps ) => {
-	const [ activeTab, setActiveTabState ] = useState< TabKey >( () =>
-		readInitialTab( config.tabs )
+	const visibleTabs = getVisibleTabs( config.tabs );
+	const initialTab = readInitialTab( config.tabs, visibleTabs );
+
+	const [ activeTab, setActiveTabState ] = useState< TabKey | null >(
+		() => initialTab
 	);
 
 	const setActiveTab = useCallback( ( tab: TabKey ) => {
@@ -91,7 +104,9 @@ const InsightsWizard = ( { config }: InsightsWizardProps ) => {
 	}, [] );
 
 	useEffect( () => {
-		writeTabToUrl( activeTab );
+		if ( activeTab ) {
+			writeTabToUrl( activeTab );
+		}
 	}, [ activeTab ] );
 
 	const { range, setPreset, setCustom } = useDateRange( {
@@ -104,6 +119,8 @@ const InsightsWizard = ( { config }: InsightsWizardProps ) => {
 			currentRange: range,
 		} );
 
+	const hasVisibleTabs = visibleTabs.length > 0;
+
 	return (
 		<div className="newspack-insights">
 			<header className="newspack-insights__header">
@@ -113,30 +130,57 @@ const InsightsWizard = ( { config }: InsightsWizardProps ) => {
 					</h1>
 				</div>
 				<div className="newspack-insights__header-right">
-					<DateRangePicker
-						range={ range }
-						onPresetChange={ setPreset }
-						onCustomChange={ setCustom }
-					/>
-					<ComparisonToggle
-						enabled={ comparisonEnabled }
-						onChange={ setComparisonEnabled }
-					/>
-					<LastUpdated timestamp={ config.lastUpdated ?? null } />
+					{ hasVisibleTabs && (
+						<>
+							<DateRangePicker
+								range={ range }
+								onPresetChange={ setPreset }
+								onCustomChange={ setCustom }
+							/>
+							<ComparisonToggle
+								enabled={ comparisonEnabled }
+								onChange={ setComparisonEnabled }
+							/>
+							<LastUpdated timestamp={ config.lastUpdated ?? null } />
+						</>
+					) }
+					{ config.settingsUrl && (
+						<a
+							className="newspack-insights__settings-link"
+							href={ config.settingsUrl }
+						>
+							{ __( 'Settings', 'newspack-plugin' ) }
+						</a>
+					) }
 				</div>
 			</header>
 
-			<TabNavigation
-				activeTab={ activeTab }
-				visibility={ config.tabs }
-				onTabChange={ setActiveTab }
-			/>
-
-			<TabContent
-				activeTab={ activeTab }
-				range={ range }
-				previousRange={ previousRange }
-			/>
+			{ hasVisibleTabs && activeTab ? (
+				<>
+					<TabNavigation
+						activeTab={ activeTab }
+						visibility={ config.tabs }
+						onTabChange={ setActiveTab }
+					/>
+					<TabContent
+						activeTab={ activeTab }
+						range={ range }
+						previousRange={ previousRange }
+					/>
+				</>
+			) : (
+				<div className="newspack-insights__empty" role="status">
+					<h2 className="newspack-insights__empty-title">
+						{ __( 'No insights sections available', 'newspack-plugin' ) }
+					</h2>
+					<p className="newspack-insights__empty-message">
+						{ __(
+							'Insights sections light up as data sources become available for this site. Check back after you have receivers configured, or visit Settings to configure data sources.',
+							'newspack-plugin'
+						) }
+					</p>
+				</div>
+			) }
 		</div>
 	);
 };
