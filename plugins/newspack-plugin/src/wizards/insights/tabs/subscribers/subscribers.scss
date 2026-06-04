@@ -108,9 +108,15 @@
 		&-label {
 			font-size: 12px;
 			font-weight: 600;
+			line-height: 1.4;
 			letter-spacing: 0.05em;
 			text-transform: uppercase;
 			color: wp-colors.$gray-700;
+			// Reserve two lines of vertical space so a long label that
+			// wraps ("MONTHLY RECURRING REVENUE") doesn't push its hero
+			// number down relative to neighboring cards whose labels fit
+			// on one line. 12px font × 1.4 line-height × 2 lines.
+			min-height: calc(12px * 1.4 * 2);
 		}
 
 		&-body {
