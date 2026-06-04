@@ -547,9 +547,14 @@ class HPOS_Storage implements Storage_Interface {
 		$prefix    = $wpdb->prefix;
 		$donations = $this->id_list( $this->donation_product_ids );
 
-		// `lifetime_revenue` is approximate — sum of subscription-record
-		// totals attributed to each product, not all historical renewal
-		// orders. True LTV waits on the v1.1 BQ wrapper.
+		// Column scope:
+		// active_subs       — current state (independent of window)
+		// active_value      — current state
+		// lifetime_revenue  — lifetime sum of subscription-record totals
+		// attributed per product; not windowed by
+		// design (true LTV waits on the v1.1 BQ wrapper)
+		// churned_subs      — WINDOWED to {start, end} via the
+		// `_schedule_cancelled` meta join below
 		//
 		// Each subscription line item is counted toward the product it
 		// references. A subscription with two non-donation line items
@@ -557,11 +562,22 @@ class HPOS_Storage implements Storage_Interface {
 		// `o.total_amount` so a multi-product sub does NOT inflate the
 		// per-product active_value beyond the subscription's actual total
 		// (instead it's attributed once per product — a simplification).
-		$sql = "SELECT
+		//
+		// The LEFT JOIN to `_schedule_cancelled` is required for window
+		// scoping. Active subscriptions don't have this meta set, so the
+		// left-joined row is NULL and the churned CASE naturally rejects
+		// them. Subscription Woo writes one `_schedule_cancelled` row per
+		// subscription at most, so no row multiplication.
+		$sql = $wpdb->prepare(
+			"SELECT
 				p.ID AS product_id,
 				p.post_title AS product_name,
 				COUNT(DISTINCT CASE WHEN o.status = 'wc-active' THEN o.id END) AS active_subs,
-				COUNT(DISTINCT CASE WHEN o.status IN ('wc-cancelled', 'wc-expired') THEN o.id END) AS churned_subs,
+				COUNT(DISTINCT CASE
+					WHEN o.status IN ('wc-cancelled', 'wc-expired')
+					 AND sch.meta_value BETWEEN %s AND %s
+					THEN o.id
+				END) AS churned_subs,
 				COALESCE(SUM(CASE WHEN o.status = 'wc-active' THEN o.total_amount END), 0) AS active_value,
 				COALESCE(SUM(o.total_amount), 0) AS lifetime_revenue
 			FROM {$prefix}wc_orders o
@@ -570,11 +586,16 @@ class HPOS_Storage implements Storage_Interface {
 			JOIN {$prefix}woocommerce_order_itemmeta oim
 				ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
 			JOIN {$prefix}posts p ON p.ID = CAST(oim.meta_value AS UNSIGNED)
+			LEFT JOIN {$prefix}wc_orders_meta sch
+				ON sch.order_id = o.id AND sch.meta_key = '_schedule_cancelled'
 			WHERE o.type = 'shop_subscription'
 			  AND oim.meta_value NOT IN ($donations)
 			GROUP BY p.ID, p.post_title
 			ORDER BY active_subs DESC
-			LIMIT 50";
+			LIMIT 50",
+			$this->fmt( $start ),
+			$this->fmt( $end )
+		);
 
 		$rows = $wpdb->get_results( $sql, ARRAY_A );
 		if ( empty( $rows ) ) {

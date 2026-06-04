@@ -547,16 +547,27 @@ class Legacy_Storage implements Storage_Interface {
 		$prefix    = $wpdb->prefix;
 		$donations = $this->id_list( $this->donation_product_ids );
 
+		// Column scope mirrors HPOS_Storage::get_performance_by_product():
+		// active_subs       — current state
+		// active_value      — current state
+		// lifetime_revenue  — lifetime sum (intentionally not windowed)
+		// churned_subs      — WINDOWED via _schedule_cancelled postmeta
+		//
 		// Each subscription line item is counted toward the product it
 		// references. Multi-product subs contribute to each product's
 		// counts and amounts; SUM uses the subscription's _order_total so
 		// the per-product active_value is attributed once per product
 		// (a documented v1 simplification).
-		$sql = "SELECT
+		$sql = $wpdb->prepare(
+			"SELECT
 				prod.ID AS product_id,
 				prod.post_title AS product_name,
 				COUNT(DISTINCT CASE WHEN p.post_status = 'wc-active' THEN p.ID END) AS active_subs,
-				COUNT(DISTINCT CASE WHEN p.post_status IN ('wc-cancelled', 'wc-expired') THEN p.ID END) AS churned_subs,
+				COUNT(DISTINCT CASE
+					WHEN p.post_status IN ('wc-cancelled', 'wc-expired')
+					 AND sch.meta_value BETWEEN %s AND %s
+					THEN p.ID
+				END) AS churned_subs,
 				COALESCE(SUM(CASE WHEN p.post_status = 'wc-active' THEN CAST(tot.meta_value AS DECIMAL(15,2)) END), 0) AS active_value,
 				COALESCE(SUM(CAST(tot.meta_value AS DECIMAL(15,2))), 0) AS lifetime_revenue
 			FROM {$prefix}posts p
@@ -567,11 +578,16 @@ class Legacy_Storage implements Storage_Interface {
 			JOIN {$prefix}woocommerce_order_itemmeta oim
 				ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
 			JOIN {$prefix}posts prod ON prod.ID = CAST(oim.meta_value AS UNSIGNED)
+			LEFT JOIN {$prefix}postmeta sch
+				ON sch.post_id = p.ID AND sch.meta_key = '_schedule_cancelled'
 			WHERE p.post_type = 'shop_subscription'
 			  AND oim.meta_value NOT IN ($donations)
 			GROUP BY prod.ID, prod.post_title
 			ORDER BY active_subs DESC
-			LIMIT 50";
+			LIMIT 50",
+			$this->fmt( $start ),
+			$this->fmt( $end )
+		);
 
 		$rows = $wpdb->get_results( $sql, ARRAY_A );
 		if ( empty( $rows ) ) {
