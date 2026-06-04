@@ -212,6 +212,7 @@ interface Donors_Storage_Interface {
 	 *     'is_parent'               => bool,
 	 *     'billing_model'           => 'recurring' | 'one_time',
 	 *     'active_recurring_donors' => int,
+	 *     'lapsed_donors_in_window' => int,
 	 *     'new_donors_in_window'    => int,
 	 *     'one_time_gifts_in_window' => int,
 	 *     'recurring_revenue_in_window' => float,
@@ -222,6 +223,7 @@ interface Donors_Storage_Interface {
 	 *         'label'                     => string,  // 'Monthly' / 'Annual' / etc
 	 *         'billing_model'             => 'recurring' | 'one_time',
 	 *         'active_recurring_donors'   => int,
+	 *         'lapsed_donors_in_window'   => int,
 	 *         'new_donors_in_window'      => int,
 	 *         'one_time_gifts_in_window'  => int,
 	 *         'recurring_revenue_in_window' => float,
@@ -238,8 +240,18 @@ interface Donors_Storage_Interface {
 	 * else `one_time`. The UI uses this to render cells that don't
 	 * apply to the product's billing model as em-dashes ("—") instead
 	 * of misleading zeros: a one-time product can't have recurring
-	 * donors or recurring revenue; a recurring product can't have
-	 * one-time gifts.
+	 * donors, recurring revenue, or lapsed donors; a recurring
+	 * product can't have one-time gifts.
+	 *
+	 * `lapsed_donors_in_window` is bucketed-per-product using the same
+	 * cohort definition as {@see get_lapsed_donors_in_window()}
+	 * (cancelled/expired in window AND customer has no current active
+	 * donation sub). A customer who lapsed across multiple donation
+	 * products in the same window counts once per product row, so
+	 * SUM(lapsed_donors_in_window) across rows can exceed the
+	 * scorecard's distinct-customer count. In Newspack's typical
+	 * data shape a donor only has one recurring donation so the
+	 * per-tier counts reconcile to the scorecard in practice.
 	 *
 	 * `*_in_window` columns are window-scoped to `[start, end]`.
 	 * `active_recurring_donors` and `lifetime_donation_revenue` are

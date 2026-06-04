@@ -6,12 +6,17 @@
  * SUM of their variations; standalone products render as a single
  * row. Sorted by lifetime_donation_revenue DESC, top 50 server-side.
  *
+ * Column order — current state → window-scoped activity → lifetime:
+ *   Product | Active recurring | Lapsed | New | One-time gifts |
+ *   Recurring revenue | Lifetime revenue
+ *
  * Mixed temporal scope (current state + window + lifetime) is called
  * out in the section caption. Cells that don't apply to the row's
- * billing model — recurring donors / recurring revenue on a one-time
- * product, one-time gifts on a recurring product — render as em-dash
- * ("—") rather than 0/$0.00, which would read as "could be higher
- * but isn't" instead of "doesn't apply."
+ * billing model — recurring donors / lapsed donors / recurring
+ * revenue on a one-time product, one-time gifts on a recurring
+ * product — render as em-dash ("—") rather than 0/$0.00, which
+ * would read as "could be higher but isn't" instead of "doesn't
+ * apply."
  */
 
 /**
@@ -39,18 +44,16 @@ const NotApplicable = () => (
 const renderCount = ( applies: boolean, value: number ) => ( applies ? formatNumber( value ) : <NotApplicable /> );
 const renderCurrency = ( applies: boolean, value: number ) => ( applies ? formatCurrency( value ) : <NotApplicable /> );
 
-const appliesActiveRecurring = ( m: BillingModel ) => m === 'recurring';
-const appliesOneTimeGifts = ( m: BillingModel ) => m === 'one_time';
-const appliesRecurringRevenue = ( m: BillingModel ) => m === 'recurring';
+const isRecurring = ( m: BillingModel ) => m === 'recurring';
+const isOneTime = ( m: BillingModel ) => m === 'one_time';
 
 const renderRowCells = ( row: DonorsTierRow | DonorsTierVariationRow ) => (
 	<>
-		<td className="newspack-insights__table-num">{ renderCount( appliesActiveRecurring( row.billing_model ), row.active_recurring_donors ) }</td>
+		<td className="newspack-insights__table-num">{ renderCount( isRecurring( row.billing_model ), row.active_recurring_donors ) }</td>
+		<td className="newspack-insights__table-num">{ renderCount( isRecurring( row.billing_model ), row.lapsed_donors_in_window ) }</td>
 		<td className="newspack-insights__table-num">{ formatNumber( row.new_donors_in_window ) }</td>
-		<td className="newspack-insights__table-num">{ renderCount( appliesOneTimeGifts( row.billing_model ), row.one_time_gifts_in_window ) }</td>
-		<td className="newspack-insights__table-num">
-			{ renderCurrency( appliesRecurringRevenue( row.billing_model ), row.recurring_revenue_in_window ) }
-		</td>
+		<td className="newspack-insights__table-num">{ renderCount( isOneTime( row.billing_model ), row.one_time_gifts_in_window ) }</td>
+		<td className="newspack-insights__table-num">{ renderCurrency( isRecurring( row.billing_model ), row.recurring_revenue_in_window ) }</td>
 		<td className="newspack-insights__table-num">{ formatCurrency( row.lifetime_donation_revenue ) }</td>
 	</>
 );
@@ -91,6 +94,9 @@ const PerformanceSection = ( { rows }: PerformanceSectionProps ) => {
 							<th scope="col">{ __( 'Product', 'newspack-plugin' ) }</th>
 							<th scope="col" className="newspack-insights__table-num">
 								{ __( 'Active recurring donors', 'newspack-plugin' ) }
+							</th>
+							<th scope="col" className="newspack-insights__table-num">
+								{ __( 'Lapsed donors', 'newspack-plugin' ) }
 							</th>
 							<th scope="col" className="newspack-insights__table-num">
 								{ __( 'New donors', 'newspack-plugin' ) }

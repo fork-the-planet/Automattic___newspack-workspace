@@ -555,13 +555,18 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 		 *
 		 *   variation_id, variation_name, parent_id, parent_name,
 		 *   sub_period (for label generation), active_recurring_donors,
-		 *   new_donors_in_window, one_time_gifts_in_window,
-		 *   recurring_revenue_in_window, lifetime_donation_revenue
+		 *   lapsed_donors_in_window, new_donors_in_window,
+		 *   one_time_gifts_in_window, recurring_revenue_in_window,
+		 *   lifetime_donation_revenue
 		 *
-		 * We can't compute all five metrics in one GROUP BY because
-		 * they scope on different order types (shop_subscription for
-		 * active_recurring_donors; shop_order for the rest). Run two
-		 * passes and merge by product_id in PHP.
+		 * Three passes — the metrics scope on different order types
+		 * and statuses so a single GROUP BY can't cover them all:
+		 *   pass 1: shop_subscription, status = wc-active → active_recurring_donors
+		 *   pass 2: shop_subscription, status IN (wc-cancelled, wc-expired)
+		 *           cancelled in window AND customer has no current
+		 *           active donation sub → lapsed_donors_in_window
+		 *   pass 3: shop_order → window/lifetime revenue + gift counts
+		 * Merge by product_id in PHP.
 		 */
 
 		// Pass 1: subscription-side — active recurring donors per
@@ -592,7 +597,62 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 
 		$subs_rows = $wpdb->get_results( $subs_sql, ARRAY_A );
 
-		// Pass 2: shop_order-side metrics — new donors, one-time gifts,
+		// Pass 2: per-tier lapsed donors. Same churn pattern as the
+		// {@see get_lapsed_donors_in_window} scorecard (cancelled or
+		// expired in window AND customer has no current active
+		// donation sub), but bucketed per (effective) product instead
+		// of aggregated. A customer who cancelled subs for multiple
+		// donation products in the same window will count once per
+		// product row, so SUM(lapsed_donors_in_window) across rows can
+		// exceed the scorecard. In Newspack's typical data shape a
+		// donor only has one recurring donation, so this reconciles
+		// cleanly in practice.
+		$lapsed_sql = $wpdb->prepare(
+			"SELECT
+				pv.ID AS variation_id,
+				pv.post_title AS variation_name,
+				pv.post_parent AS parent_id,
+				COALESCE(pp.post_title, '') AS parent_name,
+				COALESCE(period_meta.meta_value, '') AS sub_period,
+				COUNT(DISTINCT o.customer_id) AS lapsed_donors_in_window
+			FROM {$prefix}wc_orders o
+			JOIN {$prefix}wc_orders_meta cm
+				ON cm.order_id = o.id AND cm.meta_key = '_schedule_cancelled'
+			JOIN {$prefix}woocommerce_order_items oi
+				ON oi.order_id = o.id AND oi.order_item_type = 'line_item'
+			JOIN {$prefix}woocommerce_order_itemmeta pid_meta
+				ON pid_meta.order_item_id = oi.order_item_id AND pid_meta.meta_key = '_product_id'
+			LEFT JOIN {$prefix}woocommerce_order_itemmeta vid_meta
+				ON vid_meta.order_item_id = oi.order_item_id AND vid_meta.meta_key = '_variation_id'
+			JOIN {$prefix}posts pv
+				ON pv.ID = COALESCE( NULLIF( CAST(vid_meta.meta_value AS UNSIGNED), 0 ), CAST(pid_meta.meta_value AS UNSIGNED) )
+			LEFT JOIN {$prefix}posts pp ON pp.ID = pv.post_parent
+			LEFT JOIN {$prefix}postmeta period_meta
+				ON period_meta.post_id = pv.ID AND period_meta.meta_key = '_subscription_period'
+			WHERE o.type = 'shop_subscription'
+			  AND o.status IN ('wc-cancelled', 'wc-expired')
+			  AND pid_meta.meta_value IN ($donations)
+			  AND cm.meta_value BETWEEN %s AND %s
+			  AND cm.meta_value != ''
+			  AND o.customer_id NOT IN (
+				SELECT DISTINCT o2.customer_id
+				FROM {$prefix}wc_orders o2
+				JOIN {$prefix}woocommerce_order_items oi2
+					ON oi2.order_id = o2.id AND oi2.order_item_type = 'line_item'
+				JOIN {$prefix}woocommerce_order_itemmeta oim2
+					ON oim2.order_item_id = oi2.order_item_id AND oim2.meta_key = '_product_id'
+				WHERE o2.type = 'shop_subscription'
+				  AND o2.status = 'wc-active'
+				  AND oim2.meta_value IN ($donations)
+			  )
+			GROUP BY pv.ID, pv.post_title, pv.post_parent, parent_name, sub_period",
+			$this->fmt( $start ),
+			$this->fmt( $end )
+		);
+
+		$lapsed_rows = $wpdb->get_results( $lapsed_sql, ARRAY_A );
+
+		// Pass 3: shop_order-side metrics — new donors, one-time gifts,
 		// recurring revenue, lifetime revenue. Keyed by opl.product_id
 		// (the actual purchased product; no variation indirection
 		// because opl stores the line-item product directly for
@@ -657,9 +717,12 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 
 		$orders_rows = $wpdb->get_results( $orders_sql, ARRAY_A );
 
-		// Merge by variation_id. Both passes return the same per-product
-		// metadata (variation_id, names, parent, period). Fill in zeros
-		// for products that appear in only one of the two passes.
+		// Merge by variation_id. All three passes return the same
+		// per-product metadata (variation_id, names, parent, period).
+		// Fill in zeros for products that appear in only some of the
+		// passes (e.g. a one-time product never appears in subs or
+		// lapsed; a recurring product with no orders in the window
+		// only appears in subs/lapsed).
 		$by_id = [];
 		foreach ( $subs_rows as $row ) {
 			$by_id[ (int) $row['variation_id'] ] = [
@@ -669,11 +732,31 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 				'parent_name'                 => (string) $row['parent_name'],
 				'sub_period'                  => (string) $row['sub_period'],
 				'active_recurring_donors'     => (int) $row['active_recurring_donors'],
+				'lapsed_donors_in_window'     => 0,
 				'new_donors_in_window'        => 0,
 				'one_time_gifts_in_window'    => 0,
 				'recurring_revenue_in_window' => 0.0,
 				'lifetime_donation_revenue'   => 0.0,
 			];
+		}
+		foreach ( $lapsed_rows as $row ) {
+			$id = (int) $row['variation_id'];
+			if ( ! isset( $by_id[ $id ] ) ) {
+				$by_id[ $id ] = [
+					'variation_id'                => $id,
+					'variation_name'              => (string) $row['variation_name'],
+					'parent_id'                   => (int) $row['parent_id'],
+					'parent_name'                 => (string) $row['parent_name'],
+					'sub_period'                  => (string) $row['sub_period'],
+					'active_recurring_donors'     => 0,
+					'lapsed_donors_in_window'     => 0,
+					'new_donors_in_window'        => 0,
+					'one_time_gifts_in_window'    => 0,
+					'recurring_revenue_in_window' => 0.0,
+					'lifetime_donation_revenue'   => 0.0,
+				];
+			}
+			$by_id[ $id ]['lapsed_donors_in_window'] = (int) $row['lapsed_donors_in_window'];
 		}
 		foreach ( $orders_rows as $row ) {
 			$id = (int) $row['variation_id'];
@@ -685,6 +768,7 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 					'parent_name'             => (string) $row['parent_name'],
 					'sub_period'              => (string) $row['sub_period'],
 					'active_recurring_donors' => 0,
+					'lapsed_donors_in_window' => 0,
 				];
 			}
 			$by_id[ $id ]['new_donors_in_window']        = (int) $row['new_donors_in_window'];
@@ -719,6 +803,7 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 			$parent_name               = (string) $row['parent_name'];
 			$period                    = (string) $row['sub_period'];
 			$active_recurring_donors   = (int) $row['active_recurring_donors'];
+			$lapsed_donors             = (int) ( $row['lapsed_donors_in_window'] ?? 0 );
 			$new_donors                = (int) $row['new_donors_in_window'];
 			$one_time_gifts            = (int) $row['one_time_gifts_in_window'];
 			$recurring_revenue         = (float) $row['recurring_revenue_in_window'];
@@ -740,6 +825,7 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 						// the floor; upgraded below per variation.
 						'billing_model'               => 'one_time',
 						'active_recurring_donors'     => 0,
+						'lapsed_donors_in_window'     => 0,
 						'new_donors_in_window'        => 0,
 						'one_time_gifts_in_window'    => 0,
 						'recurring_revenue_in_window' => 0.0,
@@ -751,6 +837,7 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 					$parents[ $parent_id ]['billing_model'] = 'recurring';
 				}
 				$parents[ $parent_id ]['active_recurring_donors']     += $active_recurring_donors;
+				$parents[ $parent_id ]['lapsed_donors_in_window']     += $lapsed_donors;
 				$parents[ $parent_id ]['new_donors_in_window']        += $new_donors;
 				$parents[ $parent_id ]['one_time_gifts_in_window']    += $one_time_gifts;
 				$parents[ $parent_id ]['recurring_revenue_in_window'] += $recurring_revenue;
@@ -760,6 +847,7 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 					'label'                       => $this->variation_label( $period, $variation_name, $parent_name ),
 					'billing_model'               => $billing_model,
 					'active_recurring_donors'     => $active_recurring_donors,
+					'lapsed_donors_in_window'     => $lapsed_donors,
 					'new_donors_in_window'        => $new_donors,
 					'one_time_gifts_in_window'    => $one_time_gifts,
 					'recurring_revenue_in_window' => $recurring_revenue,
@@ -772,6 +860,7 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 					'is_parent'                   => false,
 					'billing_model'               => $billing_model,
 					'active_recurring_donors'     => $active_recurring_donors,
+					'lapsed_donors_in_window'     => $lapsed_donors,
 					'new_donors_in_window'        => $new_donors,
 					'one_time_gifts_in_window'    => $one_time_gifts,
 					'recurring_revenue_in_window' => $recurring_revenue,

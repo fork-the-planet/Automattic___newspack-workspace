@@ -567,6 +567,57 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 
 		$subs_rows = $wpdb->get_results( $subs_sql, ARRAY_A );
 
+		// Lapsed-donors pass: per-tier bucket of the {@see get_lapsed_donors_in_window}
+		// scorecard cohort. See HPOS variant for the over-count note.
+		$lapsed_sql = $wpdb->prepare(
+			"SELECT
+				pv.ID AS variation_id,
+				pv.post_title AS variation_name,
+				pv.post_parent AS parent_id,
+				COALESCE(pp.post_title, '') AS parent_name,
+				COALESCE(period_meta.meta_value, '') AS sub_period,
+				COUNT(DISTINCT cust.meta_value) AS lapsed_donors_in_window
+			FROM {$prefix}posts p
+			JOIN {$prefix}postmeta cust
+				ON cust.post_id = p.ID AND cust.meta_key = '_customer_user'
+			JOIN {$prefix}postmeta cancelled
+				ON cancelled.post_id = p.ID AND cancelled.meta_key = '_schedule_cancelled'
+			JOIN {$prefix}woocommerce_order_items oi
+				ON oi.order_id = p.ID AND oi.order_item_type = 'line_item'
+			JOIN {$prefix}woocommerce_order_itemmeta pid_meta
+				ON pid_meta.order_item_id = oi.order_item_id AND pid_meta.meta_key = '_product_id'
+			LEFT JOIN {$prefix}woocommerce_order_itemmeta vid_meta
+				ON vid_meta.order_item_id = oi.order_item_id AND vid_meta.meta_key = '_variation_id'
+			JOIN {$prefix}posts pv
+				ON pv.ID = COALESCE( NULLIF( CAST(vid_meta.meta_value AS UNSIGNED), 0 ), CAST(pid_meta.meta_value AS UNSIGNED) )
+			LEFT JOIN {$prefix}posts pp ON pp.ID = pv.post_parent
+			LEFT JOIN {$prefix}postmeta period_meta
+				ON period_meta.post_id = pv.ID AND period_meta.meta_key = '_subscription_period'
+			WHERE p.post_type = 'shop_subscription'
+			  AND p.post_status IN ('wc-cancelled', 'wc-expired')
+			  AND pid_meta.meta_value IN ($donations)
+			  AND cancelled.meta_value BETWEEN %s AND %s
+			  AND cancelled.meta_value != ''
+			  AND cust.meta_value NOT IN (
+				SELECT DISTINCT cust2.meta_value
+				FROM {$prefix}posts p2
+				JOIN {$prefix}postmeta cust2
+					ON cust2.post_id = p2.ID AND cust2.meta_key = '_customer_user'
+				JOIN {$prefix}woocommerce_order_items oi2
+					ON oi2.order_id = p2.ID AND oi2.order_item_type = 'line_item'
+				JOIN {$prefix}woocommerce_order_itemmeta oim2
+					ON oim2.order_item_id = oi2.order_item_id AND oim2.meta_key = '_product_id'
+				WHERE p2.post_type = 'shop_subscription'
+				  AND p2.post_status = 'wc-active'
+				  AND oim2.meta_value IN ($donations)
+			  )
+			GROUP BY pv.ID, pv.post_title, pv.post_parent, parent_name, sub_period",
+			$this->fmt( $start ),
+			$this->fmt( $end )
+		);
+
+		$lapsed_rows = $wpdb->get_results( $lapsed_sql, ARRAY_A );
+
 		// shop_order pass: four metrics aggregated per opl.product_id.
 		$orders_sql = $wpdb->prepare(
 			"SELECT
@@ -640,11 +691,31 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 				'parent_name'                 => (string) $row['parent_name'],
 				'sub_period'                  => (string) $row['sub_period'],
 				'active_recurring_donors'     => (int) $row['active_recurring_donors'],
+				'lapsed_donors_in_window'     => 0,
 				'new_donors_in_window'        => 0,
 				'one_time_gifts_in_window'    => 0,
 				'recurring_revenue_in_window' => 0.0,
 				'lifetime_donation_revenue'   => 0.0,
 			];
+		}
+		foreach ( $lapsed_rows as $row ) {
+			$id = (int) $row['variation_id'];
+			if ( ! isset( $by_id[ $id ] ) ) {
+				$by_id[ $id ] = [
+					'variation_id'                => $id,
+					'variation_name'              => (string) $row['variation_name'],
+					'parent_id'                   => (int) $row['parent_id'],
+					'parent_name'                 => (string) $row['parent_name'],
+					'sub_period'                  => (string) $row['sub_period'],
+					'active_recurring_donors'     => 0,
+					'lapsed_donors_in_window'     => 0,
+					'new_donors_in_window'        => 0,
+					'one_time_gifts_in_window'    => 0,
+					'recurring_revenue_in_window' => 0.0,
+					'lifetime_donation_revenue'   => 0.0,
+				];
+			}
+			$by_id[ $id ]['lapsed_donors_in_window'] = (int) $row['lapsed_donors_in_window'];
 		}
 		foreach ( $orders_rows as $row ) {
 			$id = (int) $row['variation_id'];
@@ -656,6 +727,7 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 					'parent_name'             => (string) $row['parent_name'],
 					'sub_period'              => (string) $row['sub_period'],
 					'active_recurring_donors' => 0,
+					'lapsed_donors_in_window' => 0,
 				];
 			}
 			$by_id[ $id ]['new_donors_in_window']        = (int) $row['new_donors_in_window'];
@@ -685,6 +757,7 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 			$parent_name               = (string) $row['parent_name'];
 			$period                    = (string) $row['sub_period'];
 			$active_recurring_donors   = (int) $row['active_recurring_donors'];
+			$lapsed_donors             = (int) ( $row['lapsed_donors_in_window'] ?? 0 );
 			$new_donors                = (int) $row['new_donors_in_window'];
 			$one_time_gifts            = (int) $row['one_time_gifts_in_window'];
 			$recurring_revenue         = (float) $row['recurring_revenue_in_window'];
@@ -703,6 +776,7 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 						// upgrade-on-recurring-variation pattern.
 						'billing_model'               => 'one_time',
 						'active_recurring_donors'     => 0,
+						'lapsed_donors_in_window'     => 0,
 						'new_donors_in_window'        => 0,
 						'one_time_gifts_in_window'    => 0,
 						'recurring_revenue_in_window' => 0.0,
@@ -714,6 +788,7 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 					$parents[ $parent_id ]['billing_model'] = 'recurring';
 				}
 				$parents[ $parent_id ]['active_recurring_donors']     += $active_recurring_donors;
+				$parents[ $parent_id ]['lapsed_donors_in_window']     += $lapsed_donors;
 				$parents[ $parent_id ]['new_donors_in_window']        += $new_donors;
 				$parents[ $parent_id ]['one_time_gifts_in_window']    += $one_time_gifts;
 				$parents[ $parent_id ]['recurring_revenue_in_window'] += $recurring_revenue;
@@ -723,6 +798,7 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 					'label'                       => $this->variation_label( $period, $variation_name, $parent_name ),
 					'billing_model'               => $billing_model,
 					'active_recurring_donors'     => $active_recurring_donors,
+					'lapsed_donors_in_window'     => $lapsed_donors,
 					'new_donors_in_window'        => $new_donors,
 					'one_time_gifts_in_window'    => $one_time_gifts,
 					'recurring_revenue_in_window' => $recurring_revenue,
@@ -735,6 +811,7 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 					'is_parent'                   => false,
 					'billing_model'               => $billing_model,
 					'active_recurring_donors'     => $active_recurring_donors,
+					'lapsed_donors_in_window'     => $lapsed_donors,
 					'new_donors_in_window'        => $new_donors,
 					'one_time_gifts_in_window'    => $one_time_gifts,
 					'recurring_revenue_in_window' => $recurring_revenue,
@@ -759,7 +836,7 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 		usort(
 			$out,
 			static function ( $a, $b ) {
-				return $b['active_recurring_donors'] <=> $a['active_recurring_donors'];
+				return $b['lifetime_donation_revenue'] <=> $a['lifetime_donation_revenue'];
 			}
 		);
 		return array_slice( $out, 0, 50 );

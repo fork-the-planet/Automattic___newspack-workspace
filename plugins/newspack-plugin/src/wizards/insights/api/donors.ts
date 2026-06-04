@@ -52,6 +52,7 @@ export interface DonorsTierVariationRow {
 	label: string;
 	billing_model: BillingModel;
 	active_recurring_donors: number;
+	lapsed_donors_in_window: number;
 	new_donors_in_window: number;
 	one_time_gifts_in_window: number;
 	recurring_revenue_in_window: number;
@@ -68,6 +69,7 @@ export interface DonorsTierRow {
 	 */
 	billing_model: BillingModel;
 	active_recurring_donors: number;
+	lapsed_donors_in_window: number;
 	new_donors_in_window: number;
 	one_time_gifts_in_window: number;
 	recurring_revenue_in_window: number;
