@@ -277,15 +277,24 @@
 		}
 
 		// Variation rows sit directly under their parent. Same chrome
-		// as parent rows, no background change, just a lighter text
-		// color and an indent on the Product cell so the nesting reads
-		// at a glance.
-		&-row--variation td {
-			color: wp-colors.$gray-600;
-		}
+		// as parent rows, no background change, just a slightly lighter
+		// text color (gray-700: subordinate but not faded out) and an
+		// indent on the Product cell so the nesting reads at a glance.
+		//
+		// The indent rule targets `td:first-child` rather than the
+		// `&-cell--indented` modifier because that modifier (one class,
+		// specificity 0,1,0) loses to the base `.table td` rule
+		// (specificity 0,2,1) and the `padding-left` would never
+		// apply. `&-row--variation td:first-child` is (0,2,2) which
+		// wins cleanly.
+		&-row--variation {
+			td {
+				color: wp-colors.$gray-700;
+			}
 
-		&-cell--indented {
-			padding-left: 44px; // 20px base + 24px indent
+			td:first-child {
+				padding-left: 44px; // 20px table padding + 24px indent
+			}
 		}
 	}
 }

@@ -89,7 +89,7 @@ const PerformanceSection = ( { rows }: PerformanceSectionProps ) => {
 								{ row.is_parent &&
 									row.variations?.map( v => (
 										<tr key={ `${ row.product_id }-${ v.variation_id }` } className="newspack-insights__table-row--variation">
-											<td className="newspack-insights__table-cell--indented">{ v.label }</td>
+											<td>{ v.label }</td>
 											<td className="newspack-insights__table-num">{ formatNumber( v.active_subs ) }</td>
 											<td className="newspack-insights__table-num">{ formatNumber( v.churned_subs ) }</td>
 											<td className="newspack-insights__table-num">{ formatCurrency( v.active_value ) }</td>

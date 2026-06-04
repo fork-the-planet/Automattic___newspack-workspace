@@ -630,18 +630,20 @@ class HPOS_Storage implements Storage_Interface {
 		// left-joined row is NULL and the churned CASE naturally rejects
 		// them. Subscription Woo writes one `_schedule_cancelled` row per
 		// subscription at most, so no row multiplication.
-		// Query at the effective-product level. Woo's convention for
-		// variable products is to write the PARENT id into the line
-		// item's `_product_id` meta and the actual variation id into a
-		// separate `_variation_id` meta. We COALESCE the latter over
-		// the former so the row resolves to:
-		//   - the variation for variable products (post_parent > 0)
-		//   - the standalone product for simple subs (post_parent = 0)
-		//
-		// The donation filter stays on `_product_id` because the
-		// donation set is keyed by the parent in WC's data model.
-		// Aggregation into parent + nested variations happens in PHP
-		// below.
+		/*
+		 * Query at the effective-product level. Woo's convention for
+		 * variable products is to write the PARENT id into the line
+		 * item's `_product_id` meta and the actual variation id into a
+		 * separate `_variation_id` meta. We COALESCE the latter over
+		 * the former so the row resolves to the variation for variable
+		 * products (post_parent > 0) and to the standalone product for
+		 * simple subs (post_parent = 0).
+		 *
+		 * The donation filter stays on `_product_id` because the
+		 * donation set is keyed by the parent in WC's data model.
+		 * Aggregation into parent + nested variations happens in PHP
+		 * below.
+		 */
 		$sql = $wpdb->prepare(
 			"SELECT
 				pv.ID AS variation_id,
