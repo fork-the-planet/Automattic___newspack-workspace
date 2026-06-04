@@ -22,7 +22,7 @@ import { __, sprintf } from '@wordpress/i18n';
  */
 import type { SubscribersWindow } from '../../api/subscribers';
 import type { DateRange } from '../../state/useDateRange';
-import MetricCard from './MetricCard';
+import MetricCard from '../components/MetricCard';
 
 export interface WindowedSectionProps {
 	range: DateRange;

@@ -22,7 +22,7 @@ import { Fragment } from '@wordpress/element';
  * Internal dependencies
  */
 import type { PerformanceRow } from '../../api/subscribers';
-import { formatCurrency, formatNumber } from './format';
+import { formatCurrency, formatNumber } from '../components/format';
 
 export interface PerformanceSectionProps {
 	rows: PerformanceRow[];

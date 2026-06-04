@@ -20,7 +20,7 @@ import { __ } from '@wordpress/i18n';
  * Internal dependencies
  */
 import type { SubscribersSnapshot } from '../../api/subscribers';
-import MetricCard from './MetricCard';
+import MetricCard from '../components/MetricCard';
 
 export interface ScorecardSectionProps {
 	snapshot: SubscribersSnapshot;
