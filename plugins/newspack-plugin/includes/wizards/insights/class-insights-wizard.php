@@ -111,30 +111,116 @@ class Insights_Wizard extends Wizard {
 	}
 
 	/**
-	 * Build the boot config consumed by the React entry.
+	 * Cache key for the donation-activity detection result.
 	 *
-	 * @return array
+	 * @var string
 	 */
+	const DONATION_ACTIVITY_TRANSIENT = 'newspack_insights_has_donation_activity';
+
 	/**
 	 * Donors tab visibility. True when the publisher has at least one
-	 * donation product configured (per the union of canonical Newspack
-	 * donation family + manually flagged products).
+	 * donation-related order or subscription in their history.
 	 *
-	 * Wraps the shared {@see \Newspack\Insights\Donation_Product_Classifier}.
-	 * The classifier is loaded by the Donors / Subscribers sections'
-	 * `init()` callbacks, both of which run before this boot config
-	 * is requested by enqueue_scripts_and_styles. Falls back to true
-	 * if the classifier class isn't available (defensive — the section
-	 * file may have failed to load in development) so the tab still
-	 * appears and the missing-dep can be diagnosed.
+	 * Product existence is NOT a useful signal: every Newspack publisher
+	 * receives the canonical donation product family on install regardless
+	 * of whether they ever collect donations, so a product-existence
+	 * check showed Tab 7 on every site, including the many publishers
+	 * who have never taken a donation. Activity is the right heuristic —
+	 * a single qualifying order or subscription gates the tab visible.
+	 *
+	 * Result is cached for 24h via {@see self::DONATION_ACTIVITY_TRANSIENT}.
+	 * State transitions ("publisher started taking donations") are rare
+	 * and one-way, so aggressive caching is correct. Tests / manual
+	 * invalidation can call {@see self::force_refresh_donation_activity()}.
+	 *
+	 * Returns false immediately when the donation product ID set is
+	 * empty (nothing the activity query could match) without running
+	 * the EXISTS query. Falls back to true if the classifier class
+	 * isn't loaded (defensive — preserves visibility so the missing
+	 * dependency can be diagnosed rather than silently hiding the tab).
 	 *
 	 * @return bool
 	 */
-	private static function has_donation_products(): bool {
-		if ( ! class_exists( '\Newspack\Insights\Donation_Product_Classifier' ) ) {
+	private static function has_donation_activity(): bool {
+		$cached = get_transient( self::DONATION_ACTIVITY_TRANSIENT );
+		if ( 'yes' === $cached ) {
 			return true;
 		}
-		return ! empty( \Newspack\Insights\Donation_Product_Classifier::get_donation_product_ids() );
+		if ( 'no' === $cached ) {
+			return false;
+		}
+
+		$has_activity = self::compute_donation_activity();
+		set_transient( self::DONATION_ACTIVITY_TRANSIENT, $has_activity ? 'yes' : 'no', DAY_IN_SECONDS );
+		return $has_activity;
+	}
+
+	/**
+	 * Force-recompute the donation activity flag, bypassing and
+	 * refreshing the cache. Useful for tests and for the case where a
+	 * publisher just received their first donation.
+	 *
+	 * @return bool The freshly computed activity flag.
+	 */
+	public static function force_refresh_donation_activity(): bool {
+		delete_transient( self::DONATION_ACTIVITY_TRANSIENT );
+		$has_activity = self::compute_donation_activity();
+		set_transient( self::DONATION_ACTIVITY_TRANSIENT, $has_activity ? 'yes' : 'no', DAY_IN_SECONDS );
+		return $has_activity;
+	}
+
+	/**
+	 * Run the activity query without consulting the cache.
+	 *
+	 * @return bool
+	 */
+	private static function compute_donation_activity(): bool {
+		if ( ! class_exists( '\Newspack\Insights\Donation_Product_Classifier' ) ) {
+			// Defensive: keep tab visible so the missing dep can be diagnosed.
+			return true;
+		}
+		$donation_ids = \Newspack\Insights\Donation_Product_Classifier::get_donation_product_ids();
+		if ( empty( $donation_ids ) ) {
+			return false;
+		}
+
+		global $wpdb;
+		$donations_list = implode( ',', array_map( 'intval', $donation_ids ) );
+
+		// Dispatch by backend so we read from the authoritative orders
+		// source rather than scanning a potentially stale legacy CPT
+		// table on HPOS sites (or vice versa).
+		$backend = class_exists( '\Newspack\Insights\Storage_Detector' )
+			? \Newspack\Insights\Storage_Detector::detect()
+			: 'legacy';
+
+		if ( 'hpos' === $backend ) {
+			$sql = "SELECT EXISTS (
+				SELECT 1 FROM {$wpdb->prefix}wc_orders o
+				JOIN {$wpdb->prefix}woocommerce_order_items items ON items.order_id = o.id
+				JOIN {$wpdb->prefix}woocommerce_order_itemmeta meta
+					ON meta.order_item_id = items.order_item_id
+					AND meta.meta_key = '_product_id'
+				WHERE o.type IN ('shop_order', 'shop_subscription')
+				  AND meta.meta_value IN ($donations_list)
+				LIMIT 1
+			) AS has_activity";
+		} else {
+			$sql = "SELECT EXISTS (
+				SELECT 1 FROM {$wpdb->prefix}posts p
+				JOIN {$wpdb->prefix}woocommerce_order_items items ON items.order_id = p.ID
+				JOIN {$wpdb->prefix}woocommerce_order_itemmeta meta
+					ON meta.order_item_id = items.order_item_id
+					AND meta.meta_key = '_product_id'
+				WHERE p.post_type IN ('shop_order', 'shop_subscription')
+				  AND meta.meta_value IN ($donations_list)
+				LIMIT 1
+			) AS has_activity";
+		}
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return (bool) (int) $wpdb->get_var( $sql );
+		// phpcs:enable
 	}
 
 	/**
@@ -166,7 +252,7 @@ class Insights_Wizard extends Wizard {
 				'gates'       => true,
 				'prompts'     => true,
 				'subscribers' => true,
-				'donors'      => self::has_donation_products(),
+				'donors'      => self::has_donation_activity(),
 				'advertising' => true,
 			],
 			'defaultDateRange'  => [
