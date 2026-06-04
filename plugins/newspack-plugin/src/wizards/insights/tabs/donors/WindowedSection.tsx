@@ -88,7 +88,7 @@ const WindowedSection = ( { range, current, previous }: WindowedSectionProps ) =
 				value={ current.one_time_revenue }
 				format="currency"
 				previousValue={ previous?.one_time_revenue }
-				description={ __( 'Gifts from non-subscription donation products', 'newspack-plugin' ) }
+				description={ __( 'Gifts from non-recurring donations', 'newspack-plugin' ) }
 			/>
 			<MetricCard
 				label={ __( 'Recurring donation revenue', 'newspack-plugin' ) }
