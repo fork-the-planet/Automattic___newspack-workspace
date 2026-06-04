@@ -254,6 +254,16 @@ class Subscribers_Metric {
 	/**
 	 * Subscription tenure distribution (one row per active sub).
 	 *
+	 * NOTE: as of v1 the React Subscribers tab no longer renders the
+	 * tenure histogram that previously consumed this data — only the
+	 * median / p25 / p75 callouts are shown, and those are derived from
+	 * the same per-row payload returned here. This method (and the
+	 * corresponding {@see Storage_Interface::get_subscription_tenure_distribution()}
+	 * implementations) is preserved for a potential v1.1 revival of a
+	 * richer tenure visualization. Do not delete as "dead code"; the
+	 * REST endpoint still surfaces this payload and the React layer
+	 * still uses the per-row days array.
+	 *
 	 * @return array<int, array{product_name: string, tenure_days: int}>
 	 */
 	public function get_subscription_tenure_distribution(): array {
