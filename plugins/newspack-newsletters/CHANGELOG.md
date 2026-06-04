@@ -1,4 +1,4 @@
-## newspack-newsletters [3.33.6-alpha.1](https://github.com/Automattic/newspack-workspace/compare/newspack-newsletters@3.33.5...newspack-newsletters@3.33.6-alpha.1) (2026-06-03)
+## newspack-newsletters [3.33.6](https://github.com/Automattic/newspack-workspace/compare/newspack-newsletters@3.33.5...newspack-newsletters@3.33.6) (2026-06-03)
 
 
 ### Bug Fixes

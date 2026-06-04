@@ -1,4 +1,18 @@
-## newspack [6.42.2-alpha.1](https://github.com/Automattic/newspack-workspace/compare/newspack@6.42.1...newspack@6.42.2-alpha.1) (2026-06-03)
+## newspack [6.42.4](https://github.com/Automattic/newspack-workspace/compare/newspack@6.42.3...newspack@6.42.4) (2026-06-04)
+
+
+### Bug Fixes
+
+* **integrations:** skip unconfigured + dedupe health-check alerts ([#207](https://github.com/Automattic/newspack-workspace/issues/207)) ([63eebb9](https://github.com/Automattic/newspack-workspace/commit/63eebb9a30b54f3c265db4be3584e69218239441))
+
+## newspack [6.42.3](https://github.com/Automattic/newspack-workspace/compare/newspack@6.42.2...newspack@6.42.3) (2026-06-04)
+
+
+### Bug Fixes
+
+* **jetpack:** disable Newsletter (subscriptions) module ([#208](https://github.com/Automattic/newspack-workspace/issues/208)) ([7d56e9d](https://github.com/Automattic/newspack-workspace/commit/7d56e9d92988bf95640fb6924b7a9eb1c66c71d0))
+
+## newspack [6.42.2](https://github.com/Automattic/newspack-workspace/compare/newspack@6.42.1...newspack@6.42.2) (2026-06-03)
 
 
 ### Bug Fixes

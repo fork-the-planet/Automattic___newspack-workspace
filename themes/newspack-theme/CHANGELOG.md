@@ -1,4 +1,4 @@
-## newspack-theme [2.23.1-alpha.1](https://github.com/Automattic/newspack-workspace/compare/newspack-theme@2.23.0...newspack-theme@2.23.1-alpha.1) (2026-06-03)
+## newspack-theme [2.23.1](https://github.com/Automattic/newspack-workspace/compare/newspack-theme@2.23.0...newspack-theme@2.23.1) (2026-06-03)
 
 
 ### Bug Fixes
