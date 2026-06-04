@@ -48,6 +48,9 @@ function newspack_string_to_bool( $string ) {
  *
  * Default cascade: display_name → full_name → login. Email is never used by
  * default to avoid leaking addresses; pass an explicit cascade to include it.
+ * A real (non-email) label always wins. An email-valued candidate is only used
+ * as a last resort and reduced to its local part (the bit before '@') unless the
+ * strategy is explicitly 'email', so an email display_name/login never leaks in full.
  * For just the display name, pass `[ 'display_name' ]`.
  * For first name only, pass `[ 'first_name' ]`.
  *
@@ -62,6 +65,7 @@ function newspack_get_user_display_label( $user, $cascade = [ 'display_name', 'f
 	if ( ! $user instanceof \WP_User ) {
 		return '';
 	}
+	$email_fallback = '';
 	foreach ( $cascade as $strategy ) {
 		$candidate = '';
 		switch ( $strategy ) {
@@ -84,11 +88,21 @@ function newspack_get_user_display_label( $user, $cascade = [ 'display_name', 'f
 				$candidate = (string) $user->user_login;
 				break;
 		}
-		if ( '' !== $candidate ) {
-			return $candidate;
+		if ( '' === $candidate ) {
+			continue;
 		}
+		// A real label always wins. An email-valued display_name/login is held back
+		// as a last resort, reduced to its local part so the full address never leaks.
+		// The first email-shaped candidate in the cascade wins the fallback slot.
+		if ( 'email' !== $strategy && is_email( $candidate ) ) {
+			if ( '' === $email_fallback ) {
+				$email_fallback = (string) strstr( $candidate, '@', true );
+			}
+			continue;
+		}
+		return $candidate;
 	}
-	return '';
+	return $email_fallback;
 }
 
 /**
