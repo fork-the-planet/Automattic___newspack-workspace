@@ -150,11 +150,12 @@ class Donors_REST_Controller extends WP_REST_Controller {
 		$response = [
 			'classification' => $metric->get_classification_metadata(),
 			'snapshot'       => [
-				'active_donors'                  => $metric->get_active_donors(),
-				'active_recurring_donors'        => $metric->get_active_recurring_donors(),
-				'donation_mrr'                   => $metric->get_donation_mrr(),
-				'donation_arr'                   => $metric->get_donation_arr(),
-				'upcoming_donation_renewals_30d' => $metric->get_upcoming_donation_renewals_30d(),
+				'active_donors'                       => $metric->get_active_donors(),
+				'active_recurring_donors'             => $metric->get_active_recurring_donors(),
+				'donation_mrr'                        => $metric->get_donation_mrr(),
+				'donation_arr'                        => $metric->get_donation_arr(),
+				'upcoming_donation_renewals_30d'      => $metric->get_upcoming_donation_renewals_30d(),
+				'upcoming_donation_cancellations_30d' => $metric->get_upcoming_donation_cancellations_30d(),
 			],
 			'current'        => $this->build_window( $metric, $start, $end ),
 			'previous'       => null,

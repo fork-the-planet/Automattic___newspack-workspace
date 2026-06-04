@@ -2,9 +2,11 @@
  * ScorecardSection (NPPD-1616).
  *
  * "Subscribers at a glance" — current-state metrics that do NOT depend
- * on the date range picker. Active subscribers, MRR (with ARR rolled
- * in as a secondary line), and upcoming renewals all reflect what's
- * true right now.
+ * on the date range picker. Four cards:
+ *   - Active Subscribers
+ *   - Subscriptions MRR (with annualized as secondary)
+ *   - Upcoming renewals (active subs due to renew in next 30d)
+ *   - Upcoming cancellations (subs set to end in next 30d)
  *
  * Window-scoped metrics (new/churned, gross/net revenue, refund rate,
  * retry rate) live in {@see WindowedSection} below this one.
@@ -57,6 +59,13 @@ const ScorecardSection = ( { snapshot }: ScorecardSectionProps ) => (
 				value={ snapshot.upcoming_renewals_30d.count }
 				format="number"
 				description={ __( 'Active subscriptions due to renew in the next 30 days', 'newspack-plugin' ) }
+			/>
+			<MetricCard
+				label={ __( 'Upcoming cancellations (30d)', 'newspack-plugin' ) }
+				value={ snapshot.upcoming_cancellations_30d.count }
+				format="number"
+				lowerIsBetter
+				description={ __( 'Subscriptions set to end in the next 30 days', 'newspack-plugin' ) }
 			/>
 		</div>
 	</section>

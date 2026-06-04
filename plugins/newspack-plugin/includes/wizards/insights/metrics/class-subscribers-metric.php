@@ -42,7 +42,7 @@ class Subscribers_Metric {
 	 *
 	 * @var string
 	 */
-	const CACHE_PREFIX = 'newspack_insights_tab6_v3:';
+	const CACHE_PREFIX = 'newspack_insights_tab6_v4:';
 
 	/**
 	 * Cache TTL for windowed and snapshot metrics (30 min).
@@ -300,6 +300,22 @@ class Subscribers_Metric {
 	}
 
 	/**
+	 * Upcoming cancellations (count + total value) in the next 30 days.
+	 *
+	 * @return array{count: int, total_value: float}
+	 */
+	public function get_upcoming_cancellations_30d(): array {
+		return (array) $this->cached(
+			'upcoming_cancellations_30d',
+			[],
+			self::TTL_DEFAULT,
+			function () {
+				return $this->storage->get_upcoming_cancellations_30d();
+			}
+		);
+	}
+
+	/**
 	 * Failed payment retry rate (recoveries / attempts) in window.
 	 *
 	 * See {@see get_subscription_refund_rate()} for the response shape
@@ -327,13 +343,13 @@ class Subscribers_Metric {
 	 * @param DateTimeInterface $end   Window end.
 	 * @return array<int, array{product_id: int, product_name: string, active_subs: int, churned_subs: int, active_value: float, lifetime_revenue: float}>
 	 */
-	public function get_performance_by_product( DateTimeInterface $start, DateTimeInterface $end ): array {
+	public function get_subscriptions_by_product( DateTimeInterface $start, DateTimeInterface $end ): array {
 		return (array) $this->cached(
-			'performance_by_product',
+			'subscriptions_by_product',
 			$this->window_key( $start, $end ),
 			self::TTL_HEAVY,
 			function () use ( $start, $end ) {
-				return $this->storage->get_performance_by_product( $start, $end );
+				return $this->storage->get_subscriptions_by_product( $start, $end );
 			}
 		);
 	}

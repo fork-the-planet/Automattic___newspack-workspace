@@ -36,7 +36,7 @@ const PerformanceSection = ( { rows }: PerformanceSectionProps ) => {
 				aria-labelledby="newspack-insights-performance-heading"
 			>
 				<h2 id="newspack-insights-performance-heading" className="newspack-insights__section-heading">
-					{ __( 'Performance by product', 'newspack-plugin' ) }
+					{ __( 'Subscriptions by product', 'newspack-plugin' ) }
 				</h2>
 				<p className="newspack-insights__section-empty">{ __( 'No subscription products configured yet.', 'newspack-plugin' ) }</p>
 			</section>
@@ -49,7 +49,7 @@ const PerformanceSection = ( { rows }: PerformanceSectionProps ) => {
 			aria-labelledby="newspack-insights-performance-heading"
 		>
 			<h2 id="newspack-insights-performance-heading" className="newspack-insights__section-heading">
-				{ __( 'Performance by product', 'newspack-plugin' ) }
+				{ __( 'Subscriptions by product', 'newspack-plugin' ) }
 			</h2>
 			<p className="newspack-insights__section-caption">
 				{ __(

@@ -25,12 +25,18 @@ export interface UpcomingDonationRenewals {
 	total_value: number;
 }
 
+export interface UpcomingDonationCancellations {
+	count: number;
+	total_value: number;
+}
+
 export interface DonorsSnapshot {
 	active_donors: number;
 	active_recurring_donors: number;
 	donation_mrr: number;
 	donation_arr: number;
 	upcoming_donation_renewals_30d: UpcomingDonationRenewals;
+	upcoming_donation_cancellations_30d: UpcomingDonationCancellations;
 }
 
 /**

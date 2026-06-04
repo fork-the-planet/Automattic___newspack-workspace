@@ -148,6 +148,26 @@ interface Storage_Interface {
 	public function get_upcoming_renewals_30d(): array;
 
 	/**
+	 * Count + total value of non-donation subscriptions known to be
+	 * ending in the next 30 days. Covers two cohorts:
+	 *
+	 *   - `wc-active` subs with `_schedule_end` in next 30d
+	 *     (fixed-term subscription reaching its scheduled end)
+	 *   - `wc-pending-cancel` subs with `_schedule_end` in next 30d
+	 *     (customer-initiated cancellation, paid period not yet
+	 *     exhausted — the sub remains usable until end)
+	 *
+	 * Both legitimately signal "ending soon" to publishers; WCS uses
+	 * `_schedule_end` as the canonical end marker regardless of which
+	 * status set it.
+	 *
+	 *   [ 'count' => int, 'total_value' => float ]
+	 *
+	 * @return array{count: int, total_value: float}
+	 */
+	public function get_upcoming_cancellations_30d(): array;
+
+	/**
 	 * Fraction of payment retry attempts in the window that resulted in
 	 * a subscription returning to `wc-active`.
 	 *
@@ -203,7 +223,7 @@ interface Storage_Interface {
 	 * @param DateTimeInterface $end   Inclusive window end.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function get_performance_by_product( DateTimeInterface $start, DateTimeInterface $end ): array;
+	public function get_subscriptions_by_product( DateTimeInterface $start, DateTimeInterface $end ): array;
 
 	/**
 	 * Cancellation reason buckets for non-donation subscriptions whose

@@ -42,12 +42,18 @@ export interface UpcomingRenewals {
 	total_value: number;
 }
 
+export interface UpcomingCancellations {
+	count: number;
+	total_value: number;
+}
+
 export interface SubscribersSnapshot {
 	active_subscribers: number;
 	mrr: number;
 	arr: number;
 	tenure_distribution: TenureDistributionRow[];
 	upcoming_renewals_30d: UpcomingRenewals;
+	upcoming_cancellations_30d: UpcomingCancellations;
 }
 
 export interface PerformanceVariationRow {
@@ -93,7 +99,7 @@ export interface SubscribersWindow {
 	 * contract as `refund_rate`.
 	 */
 	failed_payment_retry_rate: SubscribersRateValue;
-	performance_by_product: PerformanceRow[];
+	subscriptions_by_product: PerformanceRow[];
 	cancellation_reasons: CancellationReasonRow[];
 }
 

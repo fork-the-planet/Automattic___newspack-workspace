@@ -92,6 +92,19 @@ interface Donors_Storage_Interface {
 	public function get_upcoming_donation_renewals_30d(): array;
 
 	/**
+	 * Count + total value of donation subscriptions ending in the next
+	 * 30 days. Covers `wc-active` subs with a scheduled fixed-term end
+	 * and `wc-pending-cancel` subs that the donor cancelled mid-cycle
+	 * with paid period remaining. Mirrors Tab 6's upcoming cancellations
+	 * with the donation filter flipped from NOT IN to IN.
+	 *
+	 *   [ 'count' => int, 'total_value' => float ]
+	 *
+	 * @return array{count: int, total_value: float}
+	 */
+	public function get_upcoming_donation_cancellations_30d(): array;
+
+	/**
 	 * Distinct customers whose FIRST donation order completed within
 	 * the window. Excludes returning donors making their second or
 	 * later gift.
