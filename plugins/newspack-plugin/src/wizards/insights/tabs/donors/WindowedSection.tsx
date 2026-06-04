@@ -76,7 +76,7 @@ const WindowedSection = ( { range, current, previous }: WindowedSectionProps ) =
 				format="number"
 				previousValue={ previous?.lapsed_donors }
 				lowerIsBetter
-				description={ __( 'Recurring donors who cancelled in this timeframe and have no active recurring donation', 'newspack-plugin' ) }
+				description={ __( 'Donors who stopped recurring giving in this timeframe', 'newspack-plugin' ) }
 			/>
 			<MetricCard
 				label={ __( 'Total donation revenue', 'newspack-plugin' ) }
@@ -92,11 +92,11 @@ const WindowedSection = ( { range, current, previous }: WindowedSectionProps ) =
 				description={ __( 'One-time gifts + recurring renewals in this timeframe', 'newspack-plugin' ) }
 			/>
 			<MetricCard
-				label={ __( 'Average gift', 'newspack-plugin' ) }
+				label={ __( 'Average one-time gift', 'newspack-plugin' ) }
 				value={ current.average_gift }
 				format="currency"
 				previousValue={ previous?.average_gift }
-				description={ __( 'Mean order total across all donation orders in selected timeframe', 'newspack-plugin' ) }
+				description={ __( 'Mean order total across one-time donation orders in this timeframe', 'newspack-plugin' ) }
 			/>
 		</div>
 	</section>

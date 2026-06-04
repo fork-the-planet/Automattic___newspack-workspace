@@ -335,6 +335,14 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 		$prefix    = $wpdb->prefix;
 		$donations = $this->id_list( $this->donation_product_ids );
 
+		// Restrict to one-time gifts only. Including renewal orders +
+		// subscription initial installments would dilute the metric:
+		// renewals are predictable amounts that say more about
+		// retention than donor generosity, and a sub initial order is
+		// "first slice of a recurring commitment" not a gift in the
+		// donor's mental model. Use the same period-meta predicate
+		// that scopes get_one_time_donation_revenue so the two
+		// metrics agree on what "one-time" means.
 		$sql = $wpdb->prepare(
 			"SELECT AVG(o.total_amount)
 			FROM {$prefix}wc_orders o
@@ -342,7 +350,13 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 			WHERE o.type = 'shop_order'
 			  AND o.status IN ('wc-completed', 'wc-processing')
 			  AND o.date_created_gmt BETWEEN %s AND %s
-			  AND opl.product_id IN ($donations)",
+			  AND opl.product_id IN ($donations)
+			  AND NOT EXISTS (
+				SELECT 1 FROM {$prefix}postmeta pm
+				WHERE pm.post_id = opl.product_id
+				  AND pm.meta_key = '_subscription_period'
+				  AND pm.meta_value IN ('day','week','month','year')
+			  )",
 			$this->fmt( $start ),
 			$this->fmt( $end )
 		);

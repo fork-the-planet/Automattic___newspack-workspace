@@ -37,7 +37,7 @@ class Donors_Metric {
 	 *
 	 * @var string
 	 */
-	const CACHE_PREFIX = 'newspack_insights_tab7_v1:';
+	const CACHE_PREFIX = 'newspack_insights_tab7_v2:';
 
 	/**
 	 * Cache TTL for windowed and snapshot metrics (30 min).

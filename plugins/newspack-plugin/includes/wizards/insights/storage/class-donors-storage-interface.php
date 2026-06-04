@@ -126,11 +126,17 @@ interface Donors_Storage_Interface {
 	public function get_recurring_donation_revenue( DateTimeInterface $start, DateTimeInterface $end ): float;
 
 	/**
-	 * Mean order total across donation `shop_order` rows in the window.
+	 * Mean order total across one-time donation `shop_order` rows in
+	 * the window. Excludes subscription renewals AND subscription
+	 * initial installments — those distort the metric (predictable
+	 * recurring amounts) and a sub initial order isn't a "gift" in
+	 * the donor's mental model, it's the first slice of a recurring
+	 * commitment. Filter is the same period-meta predicate that
+	 * scopes {@see get_one_time_donation_revenue()}.
 	 *
 	 * @param DateTimeInterface $start Inclusive window start.
 	 * @param DateTimeInterface $end   Inclusive window end.
-	 * @return float Zero when there are no donation orders to average.
+	 * @return float Zero when there are no one-time donation orders to average.
 	 */
 	public function get_average_donation_gift( DateTimeInterface $start, DateTimeInterface $end ): float;
 

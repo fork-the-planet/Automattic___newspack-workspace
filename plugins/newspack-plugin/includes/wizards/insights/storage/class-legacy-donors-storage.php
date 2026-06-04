@@ -330,6 +330,8 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 		$prefix    = $wpdb->prefix;
 		$donations = $this->id_list( $this->donation_product_ids );
 
+		// One-time gifts only. See HPOS implementation for rationale.
+		// Same period-meta predicate as get_one_time_donation_revenue.
 		$sql = $wpdb->prepare(
 			"SELECT AVG(CAST(tot.meta_value AS DECIMAL(15,2)))
 			FROM {$prefix}posts p
@@ -339,7 +341,13 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 			WHERE p.post_type = 'shop_order'
 			  AND p.post_status IN ('wc-completed', 'wc-processing')
 			  AND p.post_date_gmt BETWEEN %s AND %s
-			  AND opl.product_id IN ($donations)",
+			  AND opl.product_id IN ($donations)
+			  AND NOT EXISTS (
+				SELECT 1 FROM {$prefix}postmeta pm
+				WHERE pm.post_id = opl.product_id
+				  AND pm.meta_key = '_subscription_period'
+				  AND pm.meta_value IN ('day','week','month','year')
+			  )",
 			$this->fmt( $start ),
 			$this->fmt( $end )
 		);
