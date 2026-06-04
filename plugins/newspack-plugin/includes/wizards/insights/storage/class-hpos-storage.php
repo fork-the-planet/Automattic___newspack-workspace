@@ -3,10 +3,23 @@
  * Newspack Insights — HPOS Storage implementation (NPPD-1616).
  *
  * Implements {@see Storage_Interface} against the HPOS tables
- * (`{prefix}wc_orders`, `{prefix}wc_orders_meta`,
- * `{prefix}wc_order_product_lookup`). SQL bodies adapted from
- * `~/Sites/insights-docs/formulas/tab-6-subscribers.md` with CTEs
+ * (`{prefix}wc_orders`, `{prefix}wc_orders_meta`). SQL bodies adapted
+ * from `~/Sites/insights-docs/formulas/tab-6-subscribers.md` with CTEs
  * unwound into inline subqueries for MySQL 5.7 compatibility.
+ *
+ * Product-id joins differ by query type:
+ *
+ *   - Subscription queries (active/new/churned subscribers, MRR/ARR,
+ *     tenure, performance, retry, cancellation reasons, upcoming
+ *     renewals) JOIN through `{prefix}woocommerce_order_items` +
+ *     `{prefix}woocommerce_order_itemmeta._product_id`. The analytics
+ *     lookup `{prefix}wc_order_product_lookup` is shop_order-only on
+ *     production data (verified against Block Club Chicago and
+ *     Richland Source — 39,461 / 13,279 shop_order rows respectively,
+ *     and zero shop_subscription rows on either).
+ *   - Revenue queries (gross/net/refund_rate) operate on shop_order
+ *     and DO use `{prefix}wc_order_product_lookup`, which Woo populates
+ *     correctly for shop_order line items.
  *
  * Donation product IDs are injected at construction; an empty set
  * coerces to `(0)` in the NOT IN list (never matches a real product),
@@ -85,10 +98,13 @@ class HPOS_Storage implements Storage_Interface {
 
 		$sql = "SELECT COUNT(DISTINCT o.customer_id)
 			FROM {$prefix}wc_orders o
-			JOIN {$prefix}wc_order_product_lookup opl ON opl.order_id = o.id
+			JOIN {$prefix}woocommerce_order_items oi
+				ON oi.order_id = o.id AND oi.order_item_type = 'line_item'
+			JOIN {$prefix}woocommerce_order_itemmeta oim
+				ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
 			WHERE o.type = 'shop_subscription'
 			  AND o.status = 'wc-active'
-			  AND opl.product_id NOT IN ($donations)";
+			  AND oim.meta_value NOT IN ($donations)";
 
 		return (int) $wpdb->get_var( $sql );
 	}
@@ -114,9 +130,12 @@ class HPOS_Storage implements Storage_Interface {
 				FROM {$prefix}wc_orders o
 				JOIN {$prefix}wc_orders_meta om
 					ON om.order_id = o.id AND om.meta_key = '_schedule_start'
-				JOIN {$prefix}wc_order_product_lookup opl ON opl.order_id = o.id
+				JOIN {$prefix}woocommerce_order_items oi
+					ON oi.order_id = o.id AND oi.order_item_type = 'line_item'
+				JOIN {$prefix}woocommerce_order_itemmeta oim
+					ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
 				WHERE o.type = 'shop_subscription'
-				  AND opl.product_id NOT IN ($donations)
+				  AND oim.meta_value NOT IN ($donations)
 				GROUP BY o.customer_id
 			) AS first_subs
 			WHERE first_subs.first_start BETWEEN %s AND %s",
@@ -147,20 +166,26 @@ class HPOS_Storage implements Storage_Interface {
 				FROM {$prefix}wc_orders o
 				JOIN {$prefix}wc_orders_meta om
 					ON om.order_id = o.id AND om.meta_key = '_schedule_cancelled'
-				JOIN {$prefix}wc_order_product_lookup opl ON opl.order_id = o.id
+				JOIN {$prefix}woocommerce_order_items oi
+					ON oi.order_id = o.id AND oi.order_item_type = 'line_item'
+				JOIN {$prefix}woocommerce_order_itemmeta oim
+					ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
 				WHERE o.type = 'shop_subscription'
 				  AND o.status IN ('wc-cancelled', 'wc-expired')
-				  AND opl.product_id NOT IN ($donations)
+				  AND oim.meta_value NOT IN ($donations)
 				  AND om.meta_value BETWEEN %s AND %s
 				  AND om.meta_value != ''
 			) AS cancellations
 			WHERE cancellations.customer_id NOT IN (
 				SELECT DISTINCT o2.customer_id
 				FROM {$prefix}wc_orders o2
-				JOIN {$prefix}wc_order_product_lookup opl2 ON opl2.order_id = o2.id
+				JOIN {$prefix}woocommerce_order_items oi2
+					ON oi2.order_id = o2.id AND oi2.order_item_type = 'line_item'
+				JOIN {$prefix}woocommerce_order_itemmeta oim2
+					ON oim2.order_item_id = oi2.order_item_id AND oim2.meta_key = '_product_id'
 				WHERE o2.type = 'shop_subscription'
 				  AND o2.status = 'wc-active'
-				  AND opl2.product_id NOT IN ($donations)
+				  AND oim2.meta_value NOT IN ($donations)
 			)",
 			$this->fmt( $start ),
 			$this->fmt( $end )
@@ -179,6 +204,8 @@ class HPOS_Storage implements Storage_Interface {
 
 		// Normalize each active subscription's total to a monthly rate.
 		// Conservative ELSE clause for unrecognized periods/intervals.
+		// DISTINCT id-subselect dedupes orders that have more than one
+		// non-donation line item so MRR isn't multiplied.
 		$sql = "SELECT SUM(
 				CASE
 					WHEN bp.meta_value = 'month' AND bi.meta_value = '1' THEN o.total_amount
@@ -194,10 +221,16 @@ class HPOS_Storage implements Storage_Interface {
 				ON bp.order_id = o.id AND bp.meta_key = '_billing_period'
 			JOIN {$prefix}wc_orders_meta bi
 				ON bi.order_id = o.id AND bi.meta_key = '_billing_interval'
-			JOIN {$prefix}wc_order_product_lookup opl ON opl.order_id = o.id
 			WHERE o.type = 'shop_subscription'
 			  AND o.status = 'wc-active'
-			  AND opl.product_id NOT IN ($donations)";
+			  AND o.id IN (
+				SELECT DISTINCT oi.order_id
+				FROM {$prefix}woocommerce_order_items oi
+				JOIN {$prefix}woocommerce_order_itemmeta oim
+					ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
+				WHERE oi.order_item_type = 'line_item'
+				  AND oim.meta_value NOT IN ($donations)
+			  )";
 
 		return (float) $wpdb->get_var( $sql );
 	}
@@ -385,19 +418,22 @@ class HPOS_Storage implements Storage_Interface {
 		$donations = $this->id_list( $this->donation_product_ids );
 
 		// Tenure days since _schedule_start for each active non-donation
-		// subscription, grouped client-side by product_name. Excludes empty
-		// or future start dates (data-corruption edge case).
+		// subscription line item, grouped client-side by product_name.
+		// Excludes empty or future start dates (data-corruption edge case).
 		$sql = "SELECT
 				p.post_title AS product_name,
 				TIMESTAMPDIFF(DAY, om.meta_value, NOW()) AS tenure_days
 			FROM {$prefix}wc_orders o
 			JOIN {$prefix}wc_orders_meta om
 				ON om.order_id = o.id AND om.meta_key = '_schedule_start'
-			JOIN {$prefix}wc_order_product_lookup opl ON opl.order_id = o.id
-			JOIN {$prefix}posts p ON p.ID = opl.product_id
+			JOIN {$prefix}woocommerce_order_items oi
+				ON oi.order_id = o.id AND oi.order_item_type = 'line_item'
+			JOIN {$prefix}woocommerce_order_itemmeta oim
+				ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
+			JOIN {$prefix}posts p ON p.ID = CAST(oim.meta_value AS UNSIGNED)
 			WHERE o.type = 'shop_subscription'
 			  AND o.status = 'wc-active'
-			  AND opl.product_id NOT IN ($donations)
+			  AND oim.meta_value NOT IN ($donations)
 			  AND om.meta_value != ''
 			  AND om.meta_value < NOW()";
 
@@ -424,6 +460,8 @@ class HPOS_Storage implements Storage_Interface {
 		$prefix    = $wpdb->prefix;
 		$donations = $this->id_list( $this->donation_product_ids );
 
+		// DISTINCT id-subselect for the non-donation filter so a multi-line-item
+		// subscription is counted once and its total_amount isn't summed twice.
 		$row = $wpdb->get_row(
 			"SELECT
 				COUNT(*) AS upcoming_count,
@@ -431,10 +469,16 @@ class HPOS_Storage implements Storage_Interface {
 			FROM {$prefix}wc_orders o
 			JOIN {$prefix}wc_orders_meta om
 				ON om.order_id = o.id AND om.meta_key = '_schedule_next_payment'
-			JOIN {$prefix}wc_order_product_lookup opl ON opl.order_id = o.id
 			WHERE o.type = 'shop_subscription'
 			  AND o.status = 'wc-active'
-			  AND opl.product_id NOT IN ($donations)
+			  AND o.id IN (
+				SELECT DISTINCT oi.order_id
+				FROM {$prefix}woocommerce_order_items oi
+				JOIN {$prefix}woocommerce_order_itemmeta oim
+					ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
+				WHERE oi.order_item_type = 'line_item'
+				  AND oim.meta_value NOT IN ($donations)
+			  )
 			  AND om.meta_value BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 30 DAY)",
 			ARRAY_A
 		);
@@ -459,18 +503,23 @@ class HPOS_Storage implements Storage_Interface {
 
 		// Count retry-scheduled subscriptions in window vs. how many ended
 		// the window with status wc-active (= successful recovery).
+		// DISTINCT id-subselect for the non-donation filter so a
+		// multi-line-item subscription doesn't show up as multiple retries.
 		$sql = $wpdb->prepare(
 			"SELECT
 				COUNT(*) AS retry_attempts,
 				SUM(CASE WHEN sub.status = 'wc-active' THEN 1 ELSE 0 END) AS recoveries
 			FROM (
-				SELECT o.id AS subscription_id
+				SELECT DISTINCT o.id AS subscription_id
 				FROM {$prefix}wc_orders o
 				JOIN {$prefix}wc_orders_meta om
 					ON om.order_id = o.id AND om.meta_key = '_schedule_payment_retry'
-				JOIN {$prefix}wc_order_product_lookup opl ON opl.order_id = o.id
+				JOIN {$prefix}woocommerce_order_items oi
+					ON oi.order_id = o.id AND oi.order_item_type = 'line_item'
+				JOIN {$prefix}woocommerce_order_itemmeta oim
+					ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
 				WHERE o.type = 'shop_subscription'
-				  AND opl.product_id NOT IN ($donations)
+				  AND oim.meta_value NOT IN ($donations)
 				  AND om.meta_value BETWEEN %s AND %s
 				  AND om.meta_value != ''
 			) AS retries
@@ -498,9 +547,16 @@ class HPOS_Storage implements Storage_Interface {
 		$prefix    = $wpdb->prefix;
 		$donations = $this->id_list( $this->donation_product_ids );
 
-		// `lifetime_revenue` is approximate — sum of renewal-amount rows
-		// for the parent subscriptions, not all historical orders. True
-		// LTV waits on the v1.1 BQ wrapper.
+		// `lifetime_revenue` is approximate — sum of subscription-record
+		// totals attributed to each product, not all historical renewal
+		// orders. True LTV waits on the v1.1 BQ wrapper.
+		//
+		// Each subscription line item is counted toward the product it
+		// references. A subscription with two non-donation line items
+		// contributes to both products' counts and amounts; SUM uses
+		// `o.total_amount` so a multi-product sub does NOT inflate the
+		// per-product active_value beyond the subscription's actual total
+		// (instead it's attributed once per product — a simplification).
 		$sql = "SELECT
 				p.ID AS product_id,
 				p.post_title AS product_name,
@@ -509,10 +565,13 @@ class HPOS_Storage implements Storage_Interface {
 				COALESCE(SUM(CASE WHEN o.status = 'wc-active' THEN o.total_amount END), 0) AS active_value,
 				COALESCE(SUM(o.total_amount), 0) AS lifetime_revenue
 			FROM {$prefix}wc_orders o
-			JOIN {$prefix}wc_order_product_lookup opl ON opl.order_id = o.id
-			JOIN {$prefix}posts p ON p.ID = opl.product_id
+			JOIN {$prefix}woocommerce_order_items oi
+				ON oi.order_id = o.id AND oi.order_item_type = 'line_item'
+			JOIN {$prefix}woocommerce_order_itemmeta oim
+				ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
+			JOIN {$prefix}posts p ON p.ID = CAST(oim.meta_value AS UNSIGNED)
 			WHERE o.type = 'shop_subscription'
-			  AND opl.product_id NOT IN ($donations)
+			  AND oim.meta_value NOT IN ($donations)
 			GROUP BY p.ID, p.post_title
 			ORDER BY active_subs DESC
 			LIMIT 50";
@@ -548,6 +607,9 @@ class HPOS_Storage implements Storage_Interface {
 		$prefix    = $wpdb->prefix;
 		$donations = $this->id_list( $this->donation_product_ids );
 
+		// DISTINCT id-subselect on the non-donation filter so a sub with
+		// multiple line items doesn't get counted multiple times under the
+		// same reason.
 		$sql = $wpdb->prepare(
 			"SELECT
 				COALESCE(om.meta_value, 'unknown') AS cancellation_reason,
@@ -557,10 +619,16 @@ class HPOS_Storage implements Storage_Interface {
 				ON om.order_id = o.id AND om.meta_key = 'newspack_subscriptions_cancellation_reason'
 			JOIN {$prefix}wc_orders_meta sch
 				ON sch.order_id = o.id AND sch.meta_key = '_schedule_cancelled'
-			JOIN {$prefix}wc_order_product_lookup opl ON opl.order_id = o.id
 			WHERE o.type = 'shop_subscription'
 			  AND o.status IN ('wc-cancelled', 'wc-expired')
-			  AND opl.product_id NOT IN ($donations)
+			  AND o.id IN (
+				SELECT DISTINCT oi.order_id
+				FROM {$prefix}woocommerce_order_items oi
+				JOIN {$prefix}woocommerce_order_itemmeta oim
+					ON oim.order_item_id = oi.order_item_id AND oim.meta_key = '_product_id'
+				WHERE oi.order_item_type = 'line_item'
+				  AND oim.meta_value NOT IN ($donations)
+			  )
 			  AND sch.meta_value BETWEEN %s AND %s
 			GROUP BY cancellation_reason
 			ORDER BY count DESC",
