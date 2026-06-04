@@ -59,11 +59,7 @@ const SubscribersTab = ( { range, previousRange }: SubscribersTabProps ) => {
 	return (
 		<div className="newspack-insights__subscribers-tab">
 			<ClassificationBanner classification={ data.classification } />
-			<ScorecardSection
-				snapshot={ data.snapshot }
-				current={ data.current }
-				previous={ data.previous }
-			/>
+			<ScorecardSection snapshot={ data.snapshot } current={ data.current } previous={ data.previous } />
 			<RevenueSection current={ data.current } previous={ data.previous } />
 			<TenureSection rows={ data.snapshot.tenure_distribution } />
 			<PerformanceSection rows={ data.current.performance_by_product } />

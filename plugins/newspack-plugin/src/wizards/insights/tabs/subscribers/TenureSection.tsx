@@ -78,25 +78,17 @@ const TenureSection = ( { rows }: TenureSectionProps ) => {
 
 	if ( ! stats ) {
 		return (
-			<section
-				className="newspack-insights__section newspack-insights__section--tenure"
-				aria-labelledby="newspack-insights-tenure-heading"
-			>
+			<section className="newspack-insights__section newspack-insights__section--tenure" aria-labelledby="newspack-insights-tenure-heading">
 				<h2 id="newspack-insights-tenure-heading" className="newspack-insights__section-heading">
 					{ __( 'Subscriber tenure', 'newspack-plugin' ) }
 				</h2>
-				<p className="newspack-insights__section-empty">
-					{ __( 'No active subscribers to summarize yet.', 'newspack-plugin' ) }
-				</p>
+				<p className="newspack-insights__section-empty">{ __( 'No active subscribers to summarize yet.', 'newspack-plugin' ) }</p>
 			</section>
 		);
 	}
 
 	return (
-		<section
-			className="newspack-insights__section newspack-insights__section--tenure"
-			aria-labelledby="newspack-insights-tenure-heading"
-		>
+		<section className="newspack-insights__section newspack-insights__section--tenure" aria-labelledby="newspack-insights-tenure-heading">
 			<h2 id="newspack-insights-tenure-heading" className="newspack-insights__section-heading">
 				{ __( 'Subscriber tenure', 'newspack-plugin' ) }
 			</h2>
@@ -114,19 +106,19 @@ const TenureSection = ( { rows }: TenureSectionProps ) => {
 				<div>
 					<dt>{ __( '25th percentile', 'newspack-plugin' ) }</dt>
 					<dd>
-						{ sprintf(
-							_n( '%d day', '%d days', stats.p25, 'newspack-plugin' ),
-							stats.p25
-						) }
+						{
+							/* translators: %d: number of days */
+							sprintf( _n( '%d day', '%d days', stats.p25, 'newspack-plugin' ), stats.p25 )
+						}
 					</dd>
 				</div>
 				<div>
 					<dt>{ __( '75th percentile', 'newspack-plugin' ) }</dt>
 					<dd>
-						{ sprintf(
-							_n( '%d day', '%d days', stats.p75, 'newspack-plugin' ),
-							stats.p75
-						) }
+						{
+							/* translators: %d: number of days */
+							sprintf( _n( '%d day', '%d days', stats.p75, 'newspack-plugin' ), stats.p75 )
+						}
 					</dd>
 				</div>
 			</dl>

@@ -44,10 +44,7 @@ const errorMessage = ( e: unknown ): string => {
  *     comparison window recomputes)
  *   - explicit refetch()
  */
-const useSubscribersData = (
-	range: DateRange,
-	previousRange: DateRange | null
-): UseSubscribersDataResult => {
+const useSubscribersData = ( range: DateRange, previousRange: DateRange | null ): UseSubscribersDataResult => {
 	const [ status, setStatus ] = useState< SubscribersFetchStatus >( 'idle' );
 	const [ data, setData ] = useState< SubscribersResponse | null >( null );
 	const [ error, setError ] = useState< string | null >( null );

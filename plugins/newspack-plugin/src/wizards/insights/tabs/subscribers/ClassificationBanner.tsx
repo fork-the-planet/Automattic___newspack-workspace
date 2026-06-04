@@ -32,21 +32,19 @@ export interface ClassificationBannerProps {
 const ClassificationBanner = ( { classification }: ClassificationBannerProps ) => {
 	const { backend, donation_product_count, has_donation_family } = classification;
 
-	const backendLabel = backend === 'hpos'
-		? __( 'WooCommerce HPOS', 'newspack-plugin' )
-		: __( 'WooCommerce legacy CPT', 'newspack-plugin' );
+	const backendLabel = backend === 'hpos' ? __( 'WooCommerce HPOS', 'newspack-plugin' ) : __( 'WooCommerce legacy CPT', 'newspack-plugin' );
 
 	const donationLabel = has_donation_family
 		? sprintf(
-			/* translators: %d: number of donation products excluded from Subscribers metrics */
-			_n(
-				'%d donation product excluded from Subscribers metrics',
-				'%d donation products excluded from Subscribers metrics',
-				donation_product_count,
-				'newspack-plugin'
-			),
-			donation_product_count
-		)
+				/* translators: %d: number of donation products excluded from Subscribers metrics */
+				_n(
+					'%d donation product excluded from Subscribers metrics',
+					'%d donation products excluded from Subscribers metrics',
+					donation_product_count,
+					'newspack-plugin'
+				),
+				donation_product_count
+		  )
 		: __( 'No donation products configured — donation/subscription separation is a no-op.', 'newspack-plugin' );
 
 	return (
@@ -56,20 +54,12 @@ const ClassificationBanner = ( { classification }: ClassificationBannerProps ) =
 			aria-label={ __( 'Subscribers data classification', 'newspack-plugin' ) }
 		>
 			<div className="newspack-insights__classification-banner-row">
-				<strong className="newspack-insights__classification-banner-label">
-					{ __( 'Order storage:', 'newspack-plugin' ) }
-				</strong>
-				<span className="newspack-insights__classification-banner-value">
-					{ backendLabel }
-				</span>
+				<strong className="newspack-insights__classification-banner-label">{ __( 'Order storage:', 'newspack-plugin' ) }</strong>
+				<span className="newspack-insights__classification-banner-value">{ backendLabel }</span>
 			</div>
 			<div className="newspack-insights__classification-banner-row">
-				<strong className="newspack-insights__classification-banner-label">
-					{ __( 'Donation classification:', 'newspack-plugin' ) }
-				</strong>
-				<span className="newspack-insights__classification-banner-value">
-					{ donationLabel }
-				</span>
+				<strong className="newspack-insights__classification-banner-label">{ __( 'Donation classification:', 'newspack-plugin' ) }</strong>
+				<span className="newspack-insights__classification-banner-value">{ donationLabel }</span>
 			</div>
 		</aside>
 	);

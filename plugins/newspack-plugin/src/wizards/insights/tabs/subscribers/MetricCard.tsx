@@ -13,13 +13,7 @@ import { __, sprintf } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import {
-	formatCurrency,
-	formatNumber,
-	formatPercent,
-	formatDelta,
-	deltaDirection,
-} from './format';
+import { formatCurrency, formatNumber, formatPercent, formatDelta, deltaDirection } from './format';
 
 export type MetricFormat = 'number' | 'currency' | 'percent';
 
@@ -46,13 +40,14 @@ const MetricCard = ( props: MetricCardProps ) => {
 	const hasComparison = typeof previousValue === 'number';
 	const delta = hasComparison ? formatDelta( value, previousValue as number ) : null;
 	const direction = hasComparison ? deltaDirection( value, previousValue as number ) : 'flat';
-	const deltaA11y = hasComparison && delta
-		? sprintf(
-			/* translators: %s: signed percent change from previous window */
-			__( '%s vs previous window', 'newspack-plugin' ),
-			delta
-		)
-		: null;
+	const deltaA11y =
+		hasComparison && delta
+			? sprintf(
+					/* translators: %s: signed percent change from previous window */
+					__( '%s vs previous window', 'newspack-plugin' ),
+					delta
+			  )
+			: null;
 
 	return (
 		<div className="newspack-insights__metric-card">
@@ -66,9 +61,7 @@ const MetricCard = ( props: MetricCardProps ) => {
 					{ delta }
 				</div>
 			) }
-			{ description && (
-				<div className="newspack-insights__metric-card-description">{ description }</div>
-			) }
+			{ description && <div className="newspack-insights__metric-card-description">{ description }</div> }
 		</div>
 	);
 };

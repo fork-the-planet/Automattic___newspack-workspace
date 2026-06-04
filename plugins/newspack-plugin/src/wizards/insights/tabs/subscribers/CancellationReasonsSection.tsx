@@ -42,9 +42,7 @@ const CancellationReasonsSection = ( { rows }: CancellationReasonsSectionProps )
 				<h2 id="newspack-insights-cancellations-heading" className="newspack-insights__section-heading">
 					{ __( 'Cancellation reasons', 'newspack-plugin' ) }
 				</h2>
-				<p className="newspack-insights__section-empty">
-					{ __( 'No cancellations in the selected window.', 'newspack-plugin' ) }
-				</p>
+				<p className="newspack-insights__section-empty">{ __( 'No cancellations in the selected window.', 'newspack-plugin' ) }</p>
 			</section>
 		);
 	}
@@ -61,11 +59,7 @@ const CancellationReasonsSection = ( { rows }: CancellationReasonsSectionProps )
 				{ rows.map( row => (
 					<li key={ row.cancellation_reason } className="newspack-insights__bar-list-item">
 						<span className="newspack-insights__bar-list-label">{ humanize( row.cancellation_reason ) }</span>
-						<span
-							className="newspack-insights__bar-list-bar"
-							style={ { width: `${ ( row.count / max ) * 100 }%` } }
-							aria-hidden="true"
-						/>
+						<span className="newspack-insights__bar-list-bar" style={ { width: `${ ( row.count / max ) * 100 }%` } } aria-hidden="true" />
 						<span className="newspack-insights__bar-list-value">{ formatNumber( row.count ) }</span>
 					</li>
 				) ) }

@@ -25,10 +25,7 @@ export interface ScorecardSectionProps {
 }
 
 const ScorecardSection = ( { snapshot, current, previous }: ScorecardSectionProps ) => (
-	<section
-		className="newspack-insights__section newspack-insights__section--scorecard"
-		aria-labelledby="newspack-insights-scorecard-heading"
-	>
+	<section className="newspack-insights__section newspack-insights__section--scorecard" aria-labelledby="newspack-insights-scorecard-heading">
 		<h2 id="newspack-insights-scorecard-heading" className="newspack-insights__section-heading">
 			{ __( 'Subscribers at a glance', 'newspack-plugin' ) }
 		</h2>

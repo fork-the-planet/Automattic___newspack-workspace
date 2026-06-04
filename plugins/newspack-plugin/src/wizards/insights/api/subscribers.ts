@@ -87,9 +87,7 @@ const ENDPOINT = '/newspack-insights/v1/subscribers';
  * Throws on REST error (caught by the calling hook into an `error`
  * state).
  */
-export const fetchSubscribersData = async (
-	query: SubscribersQuery
-): Promise< SubscribersResponse > => {
+export const fetchSubscribersData = async ( query: SubscribersQuery ): Promise< SubscribersResponse > => {
 	const params = new URLSearchParams();
 	params.set( 'start', query.start );
 	params.set( 'end', query.end );

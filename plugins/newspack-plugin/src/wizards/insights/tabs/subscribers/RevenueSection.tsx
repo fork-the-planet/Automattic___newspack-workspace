@@ -22,10 +22,7 @@ export interface RevenueSectionProps {
 }
 
 const RevenueSection = ( { current, previous }: RevenueSectionProps ) => (
-	<section
-		className="newspack-insights__section newspack-insights__section--revenue"
-		aria-labelledby="newspack-insights-revenue-heading"
-	>
+	<section className="newspack-insights__section newspack-insights__section--revenue" aria-labelledby="newspack-insights-revenue-heading">
 		<h2 id="newspack-insights-revenue-heading" className="newspack-insights__section-heading">
 			{ __( 'Subscription revenue', 'newspack-plugin' ) }
 		</h2>
