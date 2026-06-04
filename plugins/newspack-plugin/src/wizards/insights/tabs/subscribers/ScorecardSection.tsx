@@ -39,7 +39,7 @@ const ScorecardSection = ( { snapshot }: ScorecardSectionProps ) => (
 				label={ __( 'Active subscribers', 'newspack-plugin' ) }
 				value={ snapshot.active_subscribers }
 				format="number"
-				description={ __( 'Distinct customers with at least one active subscription', 'newspack-plugin' ) }
+				description={ __( 'Distinct readers with at least one active subscription', 'newspack-plugin' ) }
 			/>
 			<MetricCard
 				label={ __( 'Monthly recurring revenue', 'newspack-plugin' ) }

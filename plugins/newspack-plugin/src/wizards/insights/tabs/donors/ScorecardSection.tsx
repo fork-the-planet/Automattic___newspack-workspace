@@ -43,10 +43,7 @@ const ScorecardSection = ( { snapshot }: ScorecardSectionProps ) => (
 					__( '%s active recurring', 'newspack-plugin' ),
 					formatNumber( snapshot.active_recurring_donors )
 				) }
-				description={ __(
-					'Distinct customers with an active recurring donation or a one-time gift in the last 12 months',
-					'newspack-plugin'
-				) }
+				description={ __( 'Distinct readers with an active recurring donation or a one-time gift in the last 12 months', 'newspack-plugin' ) }
 			/>
 			<MetricCard
 				label={ __( 'Donation MRR', 'newspack-plugin' ) }
