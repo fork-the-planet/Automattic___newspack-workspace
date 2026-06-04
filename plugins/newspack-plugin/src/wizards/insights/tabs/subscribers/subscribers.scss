@@ -86,8 +86,10 @@
 	//
 	// Internal layout (three regions, fixed order):
 	//   label  — top, left-aligned (spec's uppercase chip)
-	//   body   — flex: 1, centers the value + delta vertically and
-	//            horizontally so hero numbers line up across all cards
+	//   body   — flex: 1, hero sits at the top of this region and is
+	//            horizontally centered. Vertical position is consistent
+	//            across cards because all cards share the same label
+	//            height + body padding.
 	//   description — pinned to the bottom edge
 	//
 	// Every card carries the brand-color top accent — no primary/
@@ -115,10 +117,10 @@
 			flex: 1 1 auto;
 			display: flex;
 			flex-direction: column;
-			justify-content: center;
-			align-items: center;
+			justify-content: flex-start; // hero sits at the top, just under the label
+			align-items: center;          // horizontal center only
 			gap: 8px;
-			padding: 16px 0;
+			padding: 16px 0 0;
 		}
 
 		&-value {
