@@ -669,12 +669,18 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 			$recurring_revenue         = (float) $row['recurring_revenue_in_window'];
 			$lifetime_donation_revenue = (float) $row['lifetime_donation_revenue'];
 
+			$is_recurring  = in_array( $period, [ 'day', 'week', 'month', 'year' ], true );
+			$billing_model = $is_recurring ? 'recurring' : 'one_time';
+
 			if ( $parent_id > 0 ) {
 				if ( ! isset( $parents[ $parent_id ] ) ) {
 					$parents[ $parent_id ] = [
 						'product_id'                  => $parent_id,
 						'name'                        => '' !== $parent_name ? $parent_name : __( '(unnamed product)', 'newspack-plugin' ),
 						'is_parent'                   => true,
+						// See HPOS implementation for the floor +
+						// upgrade-on-recurring-variation pattern.
+						'billing_model'               => 'one_time',
 						'active_recurring_donors'     => 0,
 						'new_donors_in_window'        => 0,
 						'one_time_gifts_in_window'    => 0,
@@ -682,6 +688,9 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 						'lifetime_donation_revenue'   => 0.0,
 						'variations'                  => [],
 					];
+				}
+				if ( $is_recurring ) {
+					$parents[ $parent_id ]['billing_model'] = 'recurring';
 				}
 				$parents[ $parent_id ]['active_recurring_donors']     += $active_recurring_donors;
 				$parents[ $parent_id ]['new_donors_in_window']        += $new_donors;
@@ -691,6 +700,7 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 				$parents[ $parent_id ]['variations'][]                 = [
 					'variation_id'                => $variation_id,
 					'label'                       => $this->variation_label( $period, $variation_name, $parent_name ),
+					'billing_model'               => $billing_model,
 					'active_recurring_donors'     => $active_recurring_donors,
 					'new_donors_in_window'        => $new_donors,
 					'one_time_gifts_in_window'    => $one_time_gifts,
@@ -702,6 +712,7 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 					'product_id'                  => $variation_id,
 					'name'                        => '' !== $variation_name ? $variation_name : __( '(unnamed product)', 'newspack-plugin' ),
 					'is_parent'                   => false,
+					'billing_model'               => $billing_model,
 					'active_recurring_donors'     => $active_recurring_donors,
 					'new_donors_in_window'        => $new_donors,
 					'one_time_gifts_in_window'    => $one_time_gifts,

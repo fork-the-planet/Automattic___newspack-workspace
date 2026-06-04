@@ -251,6 +251,15 @@
 			font-variant-numeric: tabular-nums;
 		}
 
+		// Em-dash for cells where the column doesn't apply to the row
+		// (one-time products can't have recurring donors / recurring
+		// revenue; recurring products can't have one-time gifts).
+		// Visually subordinate — gray-700, matching the body-text color
+		// — to read as "not applicable" rather than "data missing."
+		&-na {
+			color: wp-colors.$gray-700;
+		}
+
 		// Nested variation/child rows sit directly under their parent.
 		// Same chrome as parent rows, no background change, just a
 		// slightly lighter text color (gray-700) and an indent on the

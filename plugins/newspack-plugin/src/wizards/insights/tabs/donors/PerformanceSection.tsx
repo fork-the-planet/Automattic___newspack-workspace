@@ -6,10 +6,12 @@
  * SUM of their variations; standalone products render as a single
  * row. Sorted by lifetime_donation_revenue DESC, top 50 server-side.
  *
- * Most columns are window-scoped to the date picker, but Lifetime
- * Revenue is all-time. A caption above the table makes that mixed
- * temporal scope explicit so publishers don't read the columns as
- * uniformly scoped.
+ * Mixed temporal scope (current state + window + lifetime) is called
+ * out in the section caption. Cells that don't apply to the row's
+ * billing model — recurring donors / recurring revenue on a one-time
+ * product, one-time gifts on a recurring product — render as em-dash
+ * ("—") rather than 0/$0.00, which would read as "could be higher
+ * but isn't" instead of "doesn't apply."
  */
 
 /**
@@ -21,12 +23,37 @@ import { Fragment } from '@wordpress/element';
 /**
  * Internal dependencies
  */
-import type { DonorsTierRow } from '../../api/donors';
+import type { BillingModel, DonorsTierRow, DonorsTierVariationRow } from '../../api/donors';
 import { formatCurrency, formatNumber } from '../components/format';
 
 export interface PerformanceSectionProps {
 	rows: DonorsTierRow[];
 }
+
+const NotApplicable = () => (
+	<span className="newspack-insights__table-na" aria-label={ __( 'Not applicable', 'newspack-plugin' ) }>
+		—
+	</span>
+);
+
+const renderCount = ( applies: boolean, value: number ) => ( applies ? formatNumber( value ) : <NotApplicable /> );
+const renderCurrency = ( applies: boolean, value: number ) => ( applies ? formatCurrency( value ) : <NotApplicable /> );
+
+const appliesActiveRecurring = ( m: BillingModel ) => m === 'recurring';
+const appliesOneTimeGifts = ( m: BillingModel ) => m === 'one_time';
+const appliesRecurringRevenue = ( m: BillingModel ) => m === 'recurring';
+
+const renderRowCells = ( row: DonorsTierRow | DonorsTierVariationRow ) => (
+	<>
+		<td className="newspack-insights__table-num">{ renderCount( appliesActiveRecurring( row.billing_model ), row.active_recurring_donors ) }</td>
+		<td className="newspack-insights__table-num">{ formatNumber( row.new_donors_in_window ) }</td>
+		<td className="newspack-insights__table-num">{ renderCount( appliesOneTimeGifts( row.billing_model ), row.one_time_gifts_in_window ) }</td>
+		<td className="newspack-insights__table-num">
+			{ renderCurrency( appliesRecurringRevenue( row.billing_model ), row.recurring_revenue_in_window ) }
+		</td>
+		<td className="newspack-insights__table-num">{ formatCurrency( row.lifetime_donation_revenue ) }</td>
+	</>
+);
 
 const PerformanceSection = ( { rows }: PerformanceSectionProps ) => {
 	if ( rows.length === 0 ) {
@@ -53,7 +80,7 @@ const PerformanceSection = ( { rows }: PerformanceSectionProps ) => {
 			</h2>
 			<p className="newspack-insights__section-caption">
 				{ __(
-					'Active recurring donors, new donors, one-time gifts, and recurring revenue are scoped to the selected timeframe. Lifetime revenue is the all-time total per product.',
+					'Current state plus activity in the selected timeframe. Lifetime revenue is the all-time total per product.',
 					'newspack-plugin'
 				) }
 			</p>
@@ -84,21 +111,13 @@ const PerformanceSection = ( { rows }: PerformanceSectionProps ) => {
 							<Fragment key={ row.product_id }>
 								<tr>
 									<td>{ row.name }</td>
-									<td className="newspack-insights__table-num">{ formatNumber( row.active_recurring_donors ) }</td>
-									<td className="newspack-insights__table-num">{ formatNumber( row.new_donors_in_window ) }</td>
-									<td className="newspack-insights__table-num">{ formatNumber( row.one_time_gifts_in_window ) }</td>
-									<td className="newspack-insights__table-num">{ formatCurrency( row.recurring_revenue_in_window ) }</td>
-									<td className="newspack-insights__table-num">{ formatCurrency( row.lifetime_donation_revenue ) }</td>
+									{ renderRowCells( row ) }
 								</tr>
 								{ row.is_parent &&
 									row.variations?.map( v => (
 										<tr key={ `${ row.product_id }-${ v.variation_id }` } className="newspack-insights__table-row--variation">
 											<td>{ v.label }</td>
-											<td className="newspack-insights__table-num">{ formatNumber( v.active_recurring_donors ) }</td>
-											<td className="newspack-insights__table-num">{ formatNumber( v.new_donors_in_window ) }</td>
-											<td className="newspack-insights__table-num">{ formatNumber( v.one_time_gifts_in_window ) }</td>
-											<td className="newspack-insights__table-num">{ formatCurrency( v.recurring_revenue_in_window ) }</td>
-											<td className="newspack-insights__table-num">{ formatCurrency( v.lifetime_donation_revenue ) }</td>
+											{ renderRowCells( v ) }
 										</tr>
 									) ) }
 							</Fragment>

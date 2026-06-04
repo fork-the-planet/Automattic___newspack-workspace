@@ -27,9 +27,18 @@ export interface DonorsSnapshot {
 	donation_arr: number;
 }
 
+/**
+ * Whether a product is sold as recurring or one-time. Derived
+ * server-side from the product's `_subscription_period` meta. The
+ * UI uses this to render cells that don't apply to the product's
+ * billing model as em-dashes instead of misleading zeros.
+ */
+export type BillingModel = 'recurring' | 'one_time';
+
 export interface DonorsTierVariationRow {
 	variation_id: number;
 	label: string;
+	billing_model: BillingModel;
 	active_recurring_donors: number;
 	new_donors_in_window: number;
 	one_time_gifts_in_window: number;
@@ -41,12 +50,17 @@ export interface DonorsTierRow {
 	product_id: number;
 	name: string;
 	is_parent: boolean;
+	/**
+	 * For variable subscription parents, this is `recurring` if ANY
+	 * variation is recurring (the canonical Newspack donation shape).
+	 */
+	billing_model: BillingModel;
 	active_recurring_donors: number;
 	new_donors_in_window: number;
 	one_time_gifts_in_window: number;
 	recurring_revenue_in_window: number;
 	lifetime_donation_revenue: number;
-	/** Present only when `is_parent` is true. Sorted by active_recurring_donors descending. */
+	/** Present only when `is_parent` is true. Sorted by lifetime_donation_revenue descending. */
 	variations?: DonorsTierVariationRow[];
 }
 

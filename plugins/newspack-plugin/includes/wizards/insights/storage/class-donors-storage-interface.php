@@ -180,10 +180,10 @@ interface Donors_Storage_Interface {
 
 	/**
 	 * Per-product donor performance breakdown. One entry per parent
-	 * donation product (or standalone product), sorted by active
-	 * recurring donor count descending, top 50. Parent entries carry
-	 * a `variations` array with one entry per variation, sorted by
-	 * active recurring donor count descending.
+	 * donation product (or standalone product), sorted by lifetime
+	 * revenue descending, top 50. Parent entries carry a `variations`
+	 * array with one entry per variation, sorted by lifetime revenue
+	 * descending.
 	 *
 	 * Columns per entry:
 	 *
@@ -191,6 +191,7 @@ interface Donors_Storage_Interface {
 	 *     'product_id'              => int,
 	 *     'name'                    => string,
 	 *     'is_parent'               => bool,
+	 *     'billing_model'           => 'recurring' | 'one_time',
 	 *     'active_recurring_donors' => int,
 	 *     'new_donors_in_window'    => int,
 	 *     'one_time_gifts_in_window' => int,
@@ -200,6 +201,7 @@ interface Donors_Storage_Interface {
 	 *       [
 	 *         'variation_id'              => int,
 	 *         'label'                     => string,  // 'Monthly' / 'Annual' / etc
+	 *         'billing_model'             => 'recurring' | 'one_time',
 	 *         'active_recurring_donors'   => int,
 	 *         'new_donors_in_window'      => int,
 	 *         'one_time_gifts_in_window'  => int,
@@ -209,6 +211,16 @@ interface Donors_Storage_Interface {
 	 *       ...
 	 *     ],
 	 *   ]
+	 *
+	 * `billing_model` is derived from the product's `_subscription_period`
+	 * meta: `recurring` when the period meta is in (day, week, month,
+	 * year), else `one_time`. Parent rows inherit `recurring` if ANY
+	 * variation is recurring (the canonical Newspack donation shape),
+	 * else `one_time`. The UI uses this to render cells that don't
+	 * apply to the product's billing model as em-dashes ("—") instead
+	 * of misleading zeros: a one-time product can't have recurring
+	 * donors or recurring revenue; a recurring product can't have
+	 * one-time gifts.
 	 *
 	 * `*_in_window` columns are window-scoped to `[start, end]`.
 	 * `active_recurring_donors` and `lifetime_donation_revenue` are
