@@ -573,6 +573,9 @@ class Legacy_Donors_Storage implements Donors_Storage_Interface {
 			LEFT JOIN {$prefix}postmeta period_meta
 				ON period_meta.post_id = pv.ID AND period_meta.meta_key = '_subscription_period'
 			LEFT JOIN (
+				-- See HPOS variant for why cust2.meta_value must be
+				-- qualified — opl2 carries customer_id and would
+				-- shadow an unqualified reference.
 				SELECT cust2.meta_value AS customer_id, MIN(p2.post_date_gmt) AS first_donation_date
 				FROM {$prefix}posts p2
 				JOIN {$prefix}postmeta cust2

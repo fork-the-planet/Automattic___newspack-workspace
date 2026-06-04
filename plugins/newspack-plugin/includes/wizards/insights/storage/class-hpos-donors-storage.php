@@ -592,13 +592,19 @@ class HPOS_Donors_Storage implements Donors_Storage_Interface {
 			LEFT JOIN {$prefix}postmeta period_meta
 				ON period_meta.post_id = pv.ID AND period_meta.meta_key = '_subscription_period'
 			LEFT JOIN (
-				SELECT customer_id, MIN(date_created_gmt) AS first_donation_date
+				-- Column prefix on customer_id is required: both
+				-- wc_orders and wc_order_product_lookup carry that column,
+				-- and an unqualified reference silently resolves to the
+				-- opl side (which is 0 for most analytics rows), so
+				-- GROUP BY collapses every row into one and the JOIN
+				-- below matches nothing.
+				SELECT o2.customer_id, MIN(o2.date_created_gmt) AS first_donation_date
 				FROM {$prefix}wc_orders o2
 				JOIN {$prefix}wc_order_product_lookup opl2 ON opl2.order_id = o2.id
 				WHERE o2.type = 'shop_order'
 				  AND o2.status IN ('wc-completed','wc-processing')
 				  AND opl2.product_id IN ($donations)
-				GROUP BY customer_id
+				GROUP BY o2.customer_id
 			) AS nd ON nd.customer_id = o.customer_id
 			WHERE o.type = 'shop_order'
 			  AND o.status IN ('wc-completed','wc-processing')
