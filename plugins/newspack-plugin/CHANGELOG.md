@@ -1,3 +1,10 @@
+## newspack [6.42.7](https://github.com/Automattic/newspack-workspace/compare/newspack@6.42.6...newspack@6.42.7) (2026-06-11)
+
+
+### Bug Fixes
+
+* **co-authors-plus:** dedup count_user_posts for linked guest authors ([#149](https://github.com/Automattic/newspack-workspace/issues/149)) ([3e577bf](https://github.com/Automattic/newspack-workspace/commit/3e577bff6b1a92277d42a8afb3085e803f8b1503))
+
 ## newspack [6.42.6](https://github.com/Automattic/newspack-workspace/compare/newspack@6.42.5...newspack@6.42.6) (2026-06-09)
 
 
